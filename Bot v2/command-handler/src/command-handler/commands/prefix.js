@@ -8,7 +8,7 @@ module.exports = {
     expectedArgs: '<prefix>',
 
     type: 'BOTH',
-    testOnly: true,
+    testOnly: false,
     guildOnly: true,
 
     permissions: [PermissionFlagsBits.Administrator],

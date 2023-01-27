@@ -6,9 +6,8 @@ const welcomeChannelSchema = new Schema({
     type: String,
     required: true,
   },
-  channels: {
-    type: [String],
-    required: true,
+  channelId: {
+    type: String,
   },
 })
 

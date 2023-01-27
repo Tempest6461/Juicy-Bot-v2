@@ -1,6 +1,5 @@
 const { InteractionType } = require("discord.js");
 const path = require("path");
-const welcome = require('./Welcome')
 
 const getAllFiles = require("../util/get-all-files");
 
@@ -20,7 +19,8 @@ class EventHandler {
       interactionCreate: {
         isButton: (interaction) => interaction.isButton(),
         isCommand: (interaction) =>
-          interaction.type === InteractionType.ApplicationCommand,
+          interaction.type === InteractionType.ApplicationCommand ||
+          interaction.type === InteractionType.ApplicationCommandAutocomplete,
       },
       messageCreate: {
         isHuman: (message) => !message.author.bot,
@@ -32,7 +32,7 @@ class EventHandler {
   }
 
   get welcome() {
-    return this._welcome
+    return this._welcome;
   }
 
   async readFiles() {

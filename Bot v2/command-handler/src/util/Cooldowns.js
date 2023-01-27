@@ -23,7 +23,7 @@ class Cooldowns {
   constructor({
     instance,
     errorMessage = 'Please wait {TIME} before doing that again.',
-    botOwnersBypass = false,
+    botOwnersBypass = true,
     dbRequired = 300, // 5 minutes
   }) {
     this._instance = instance

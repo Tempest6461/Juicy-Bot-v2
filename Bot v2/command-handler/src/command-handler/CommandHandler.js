@@ -1,79 +1,85 @@
-const path = require('path')
+const path = require("path");
 
-const getAllFiles = require('../util/get-all-files')
-const Command = require('./Command')
-const SlashCommands = require('./SlashCommands')
-const { cooldownTypes } = require('../util/Cooldowns')
-const ChannelCommands = require('./ChannelCommands')
-const CustomCommands = require('./CustomCommands')
-const DisabledCommands = require('./DisabledCommands')
-const PrefixHandler = require('./PrefixHandler')
+const getAllFiles = require("../util/get-all-files");
+const Command = require("./Command");
+const SlashCommands = require("./SlashCommands");
+const { cooldownTypes } = require("../util/Cooldowns");
+const ChannelCommands = require("./ChannelCommands");
+const CustomCommands = require("./CustomCommands");
+const DisabledCommands = require("./DisabledCommands");
+const PrefixHandler = require("./PrefixHandler");
+const WelcomeChannels = require("./WelcomeChannels");
 
 class CommandHandler {
   // <commandName, instance of the Command class>
-  _commands = new Map()
+  _commands = new Map();
   _validations = this.getValidations(
-    path.join(__dirname, 'validations', 'runtime')
-  )
-  _channelCommands = new ChannelCommands()
-  _customCommands = new CustomCommands(this)
-  _disabledCommands = new DisabledCommands()
-  _prefixes = new PrefixHandler()
+    path.join(__dirname, "validations", "runtime")
+  );
+  _channelCommands = new ChannelCommands();
+  _customCommands = new CustomCommands(this);
+  _disabledCommands = new DisabledCommands();
+  _prefixes = new PrefixHandler();
+  _welcomeChannels = new WelcomeChannels();
 
   constructor(instance, commandsDir, client) {
-    this._instance = instance
-    this._commandsDir = commandsDir
-    this._slashCommands = new SlashCommands(client)
-    this._client = client
+    this._instance = instance;
+    this._commandsDir = commandsDir;
+    this._slashCommands = new SlashCommands(client);
+    this._client = client;
 
     this._validations = [
       ...this._validations,
       ...this.getValidations(instance.validations?.runtime),
-    ]
+    ];
 
-    this.readFiles()
+    this.readFiles();
   }
 
   get commands() {
-    return this._commands
+    return this._commands;
   }
 
   get channelCommands() {
-    return this._channelCommands
+    return this._channelCommands;
   }
 
   get slashCommands() {
-    return this._slashCommands
+    return this._slashCommands;
   }
 
   get customCommands() {
-    return this._customCommands
+    return this._customCommands;
   }
 
   get disabledCommands() {
-    return this._disabledCommands
+    return this._disabledCommands;
   }
 
   get prefixHandler() {
-    return this._prefixes
+    return this._prefixes;
+  }
+
+  get welcomeChannels() {
+    return this._welcomeChannels;
   }
 
   async readFiles() {
-    const defaultCommands = getAllFiles(path.join(__dirname, './commands'))
-    const files = getAllFiles(this._commandsDir)
+    const defaultCommands = getAllFiles(path.join(__dirname, "./commands"));
+    const files = getAllFiles(this._commandsDir);
     const validations = [
-      ...this.getValidations(path.join(__dirname, 'validations', 'syntax')),
+      ...this.getValidations(path.join(__dirname, "validations", "syntax")),
       ...this.getValidations(this._instance.validations?.syntax),
-    ]
+    ];
 
     for (let file of [...defaultCommands, ...files]) {
-      const commandObject = require(file)
+      const commandObject = require(file);
 
-      let commandName = file.split(/[\/\\]/)
-      commandName = commandName.pop()
-      commandName = commandName.split('.')[0]
+      let commandName = file.split(/[\/\\]/);
+      commandName = commandName.pop();
+      commandName = commandName.split(".")[0];
 
-      const command = new Command(this._instance, commandName, commandObject)
+      const command = new Command(this._instance, commandName, commandObject);
 
       const {
         description,
@@ -82,43 +88,43 @@ class CommandHandler {
         delete: del,
         aliases = [],
         init = () => {},
-      } = commandObject
-
+      } = commandObject;
+      // console.log(commandObject)
       if (
         del ||
         this._instance.disabledDefaultCommands.includes(
           commandName.toLowerCase()
         )
       ) {
-        if (type === 'SLASH' || type === 'BOTH') {
+        if (type === "SLASH" || type === "BOTH") {
           if (testOnly) {
             for (const guildId of this._instance.testServers) {
-              this._slashCommands.delete(command.commandName, guildId)
+              await this._slashCommands.delete(command.commandName, guildId);
             }
           } else {
-            this._slashCommands.delete(command.commandName)
-          }
+            await this._slashCommands.delete(command.commandName);
+          } // console.log("Deleted command: " + command.commandName)
         }
 
-        return
+        continue;
       }
 
       for (const validation of validations) {
-        validation(command)
+        validation(command);
       }
 
-      await init(this._client, this._instance)
+      await init(this._client, this._instance);
 
-      const names = [command.commandName, ...aliases]
+      const names = [command.commandName, ...aliases];
 
       for (const name of names) {
-        this._commands.set(name, command)
+        this._commands.set(name, command);
       }
 
-      if (type === 'SLASH' || type === 'BOTH') {
+      if (type === "SLASH" || type === "BOTH") {
         const options =
           commandObject.options ||
-          this._slashCommands.createOptions(commandObject)
+          this._slashCommands.createOptions(commandObject);
 
         if (testOnly) {
           for (const guildId of this._instance.testServers) {
@@ -127,52 +133,53 @@ class CommandHandler {
               description,
               options,
               guildId
-            )
+            );
           }
         } else {
-          this._slashCommands.create(command.commandName, description, options)
+          this._slashCommands.create(command.commandName, description, options);
         }
       }
     }
   }
 
   async runCommand(command, args, message, interaction) {
-    const { callback, type, cooldowns } = command.commandObject
+    const { callback, type, cooldowns } = command.commandObject;
 
-    if (message && type === 'SLASH') {
-      return
+    if (message && type === "SLASH") {
+      return;
     }
 
-    const guild = message ? message.guild : interaction.guild
-    const member = message ? message.member : interaction.member
-    const user = message ? message.author : interaction.user
-    const channel = message ? message.channel : interaction.channel
+    const guild = message ? message.guild : interaction.guild;
+    const member = message ? message.member : interaction.member;
+    const user = message ? message.author : interaction.user;
+    const channel = message ? message.channel : interaction.channel;
 
     const usage = {
       instance: command.instance,
       message,
       interaction,
       args,
-      text: args.join(' '),
+      text: args.join(" "),
       guild,
       member,
       user,
       channel,
-    }
+      client: this._client,
+    };
 
     for (const validation of this._validations) {
       if (!(await validation(command, usage, this._prefixes.get(guild?.id)))) {
-        return
+        return;
       }
     }
 
     if (cooldowns) {
-      let cooldownType
+      let cooldownType;
 
       for (const type of cooldownTypes) {
         if (cooldowns[type]) {
-          cooldownType = type
-          break
+          cooldownType = type;
+          break;
         }
       }
 
@@ -183,37 +190,39 @@ class CommandHandler {
         guildId: guild?.id,
         duration: cooldowns[cooldownType],
         errorMessage: cooldowns.errorMessage,
+      };
+
+      const result = this._instance.cooldowns.canRunAction(cooldownUsage);
+
+      if (typeof result === "string") {
+        return result;
       }
 
-      const result = this._instance.cooldowns.canRunAction(cooldownUsage)
-
-      if (typeof result === 'string') {
-        return result
-      }
-
-      await this._instance.cooldowns.start(cooldownUsage)
+      await this._instance.cooldowns.start(cooldownUsage);
 
       usage.cancelCooldown = () => {
-        this._instance.cooldowns.cancelCooldown(cooldownUsage)
-      }
+        this._instance.cooldowns.cancelCooldown(cooldownUsage);
+      };
 
       usage.updateCooldown = (expires) => {
-        this._instance.cooldowns.updateCooldown(cooldownUsage, expires)
-      }
+        this._instance.cooldowns.updateCooldown(cooldownUsage, expires);
+      };
     }
 
-    return await callback(usage)
+    return await callback(usage);
   }
 
   getValidations(folder) {
     if (!folder) {
-      return []
+      return [];
     }
 
-    const validations = getAllFiles(folder).map((filePath) => require(filePath))
+    const validations = getAllFiles(folder).map((filePath) =>
+      require(filePath)
+    );
 
-    return validations
+    return validations;
   }
 }
 
-module.exports = CommandHandler
+module.exports = CommandHandler;

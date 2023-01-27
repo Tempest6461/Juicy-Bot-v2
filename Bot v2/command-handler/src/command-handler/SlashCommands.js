@@ -73,6 +73,7 @@ class SlashCommands {
     const existingCommand = commands.cache.find(
       (cmd) => cmd.name === commandName
     )
+    console.log(existingCommand)
     if (!existingCommand) {
       return
     }

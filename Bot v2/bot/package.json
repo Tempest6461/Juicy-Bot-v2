@@ -12,6 +12,7 @@
   "dependencies": {
     "command-handler": "file:../command-handler",
     "discord.js": "^14.7.1",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "mathjs": "^11.5.0"
   }
 }

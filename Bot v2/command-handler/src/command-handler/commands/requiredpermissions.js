@@ -10,7 +10,7 @@ module.exports = {
   description: 'Sets what commands require what permissions',
 
   type: 'SLASH',
-  testOnly: false,
+  testOnly: true,
   guildOnly: true,
 
   permissions: [PermissionFlagsBits.Administrator],

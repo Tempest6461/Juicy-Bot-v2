@@ -38,6 +38,7 @@ class Main {
     this._validations = validations;
 
     if (mongoUri) {
+      mongoose.set('strictQuery', false);
       await this.connectToMongo(mongoUri);
     }
 

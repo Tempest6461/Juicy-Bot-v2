@@ -1,3 +1,4 @@
+// * Total messages: 231
 const welcomeMessages = [
   "I challenge you to a duel!",
   "I don't often finish my thoughts, but when I do",
@@ -107,7 +108,7 @@ const welcomeMessages = [
   "For my crimes against humanity, I had been certain that I would have been placed in a jail cell. However, they outsmarted me. They forced me to play Overwatch.",
   "If you get this message, I was killed. There is 7 dollars on my nightstand. Don't touch it",
   "God damn, I hate genies! This is the last time I wish to be the President of the USA!",
-  "Oh no, I gotta pay my taxes this year LMAO JK FUCK GOVERMENT",
+  "Oh no, I gotta pay my taxes this year LMAO JK FUCK GOVERNMENT",
   "Hating on Reese's Puffs is punishable by flogging!",
   "The germs on the handrails are so tasty! Try licking them!",
   "Can't wait for COVID to be over so I can go back to licking them tasty ass handrails.",
@@ -150,10 +151,10 @@ const welcomeMessages = [
   "If you get banned, don't blame the mod, blame the discord!",
   "You can either help me cook the soup or jump in the pot!",
   "That blue lobster is my next victim...",
-  "Technically the ocean is uncarbonated so the Earth is flat!",
+  "Technically the ocean is noncarbonated so the Earth is flat!",
   "Can't have shit in this Great Coral Reef of Australia!",
   "90% of all members are reserves for war! Against who? Good question!",
-  "So, gamers. I may have 'accidently' overloaded the main reactors and locked all possible escapes",
+  "So, gamers. I may have 'accidentally' overloaded the main reactors and locked all possible escapes",
   "There's no place like home! Well, before I burn it down for insurance money!",
   "I'm not Santa, but I will raid your house on Christmas!",
   "Who knew pandas were endangered? They're great fighters",
@@ -177,7 +178,7 @@ const welcomeMessages = [
   "Don't worry about the blood, the last UNO game was actually wild!",
   "We are not the police, give us all your information about drugs and how to take them",
   "The amount of sweat inside you is disgusting, please stop using those big muscles",
-  "Bring me the head of a pig for favorful outlook",
+  "Bring me the head of a pig for favorable outlook",
   "You will need to learn Hebrew to order a LFG group here!",
   "If you are under 6 feet, I am sorry little one....",
   "The bank accepts the Monopoly money! You'll also need a mask and a branded assault rifle!",
@@ -207,7 +208,7 @@ const welcomeMessages = [
   "You remember that 'Hit or Miss' girl? I think about her. A lot.",
   "ORBITER CHALLENGE!!! ORBIT YOUR LOCAL BAR TILL YOU DEVELOP A DRINKING PROBLEM!!!",
   "Note to Self : Don't leave an unattended drink at Bill Cosby's house",
-  "Vaccum has a three-letter word that also states what I am using it for!",
+  "Vacuum has a three-letter word that also states what I am using it for!",
   "So, you know the Muffin Man? Secretly a narc AND a drug dealer",
   "I miss the Alamo....",
   "I went to the hospital for a broken heart and they billed me! Like come on!",
@@ -216,8 +217,22 @@ const welcomeMessages = [
   "You come into MY lane, steal MY minion wave, and feed MY enemy solo?!?!?",
   "Running out of patience? Try not giving a fuck!",
   "I love reading the obituary so I can figure out who exactly I can rob peacefully!",
+  "Back by unpopular demand, me!",
+  "Here's a fun challenge! shut up",
+  "This is a warning to all the nations of the world. Dr. Eggman possesses the Chaos Emeralds.",
+  "HE CAN'T KEEP GETTING AWAY WITH THIS!!!",
+  "The risk I took was calculated but I never understood the equation",
+  "If you are ever drowning, remember you wanted to go into the deep-end of the pool and deserve your fate!",
+  "Hi, welcome to Chili's",
+  "My mind, it hurts because I thought",
+  "Love me bananas, they drive me bananas, ride or die for bananas, gotta get some bananas, addicted to bananas, wife left me for bananas",
+  "The best weather is hellish heat! Like hell! Or Florida.",
+  "I saved a fish from drowning! Still died tho!",
+  "We do organized crime without the 'organized'!",
+  "Get a mop, Cardi is on stage, again.",
+  "Her name is Doja Cat, but in one song, she makes cow sounds! That's messed up!",
 ];
 
-console.log(`There is a total of ${welcomeMessages.length} welcome messages.`);
+// console.log(`There is a total of ${welcomeMessages.length} welcome messages.`);
 
 module.exports = welcomeMessages;

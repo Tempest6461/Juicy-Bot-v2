@@ -1,21 +1,24 @@
-const { ApplicationCommandOptionType, PermissionFlagsBits } = require("discord.js");
+const {
+  ApplicationCommandOptionType,
+  PermissionFlagsBits,
+} = require("discord.js");
 
 module.exports = {
   description: "Setup the welcoming channel for your server.",
 
+  minArgs: 1,
+  expectedArgs: "<channel>",
+
   type: "SLASH",
-  testOnly: true,
+  testOnly: false,
   guildOnly: true,
 
-  permissions: [
-    PermissionFlagsBits.Administrator,
-  ],
+  permissions: [PermissionFlagsBits.Administrator],
 
   options: [
     {
       name: "channel",
       description: "The channel to use for welcoming new members.",
-      required: true,
       type: ApplicationCommandOptionType.Channel,
     },
   ],
@@ -23,6 +26,14 @@ module.exports = {
   callback: async ({ instance, guild, interaction }) => {
     const channel = interaction.options.getChannel("channel");
 
-    return `The welcoming channel has been set to ${channel}.`;
+    const { welcomeChannels } = instance.commandHandler;
+
+    try {
+      await welcomeChannels.add(guild.id, channel.id);
+      return `The welcoming channel has been set to ${channel}.`;
+    } catch (err) {
+      console.log(err);
+      return `There was an error setting the welcoming channel. Error: \`${err}\``;
+    }
   },
 };
