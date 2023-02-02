@@ -32,7 +32,6 @@ module.exports = {
             .setTitle("Coin Flip")
             .setDescription(`The coin landed on **${coin}**!`)
             .setColor(0x0099ff)
-            .setTimestamp(Date.now())
             .setImage(`https://i.imgur.com/LR8H64R.gif`)
         return {
             embeds: [embed],
