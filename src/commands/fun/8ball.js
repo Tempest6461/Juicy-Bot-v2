@@ -7,7 +7,8 @@ module.exports = {
 
   minArgs: 1,
   correctSyntax: "Correct syntax: {PREFIX}8ball {ARGS}",
-  expectedArgs: "<question>",
+  expectedArgs: "<Yes or no question>",
+  cooldown: 5,
 
   type: "BOTH",
   testOnly: false,
@@ -141,14 +142,15 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
-      .setTitle(":8ball: Magic 8ball")
+      .setTitle(":crystal_ball: Magic 8ball")
+      .setThumbnail("https://i.imgur.com/E7xoGXm.gif")
       .addFields([
         {
-          name: "Question",
+          name: "Your question:",
           value: question,
         },
         {
-          name: "Answer",
+          name: "The magic 8ball says...",
           value: eightBall,
         },
       ]);

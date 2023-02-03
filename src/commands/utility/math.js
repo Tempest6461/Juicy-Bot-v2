@@ -22,10 +22,10 @@ module.exports = {
 
     let sum;
     try {
-      sum = math.evaluate(question);
+      sum = math.simplify(question);
     } catch (err) {
       return {
-        try: { content: `Error: ${err}` },
+        content: "Sorry, I can't solve that.",
       };
     }
 
@@ -35,7 +35,6 @@ module.exports = {
       .setColor(0x0099ff);
 
     return {
-      // content: `${question} = ${sum}`,
       embeds: [embed],
     };
   },
