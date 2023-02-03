@@ -1,27 +1,27 @@
-const requiredRoles = require('../../../models/required-roles-schema')
+const requiredRoles = require("../../../models/required-roles-schema");
 
 module.exports = async (command, usage) => {
-  const { guild, member, message, interaction } = usage
+  const { guild, member, message, interaction } = usage;
 
   if (!member) {
-    return true
+    return true;
   }
 
-  const _id = `${guild.id}-${command.commandName}`
-  const document = await requiredRoles.findById(_id)
+  const _id = `${guild.id}-${command.commandName}`;
+  const document = await requiredRoles.findById(_id);
 
   if (document) {
-    let hasRole = false
+    let hasRole = false;
 
     for (const roleId of document.roles) {
       if (member.roles.cache.has(roleId)) {
-        hasRole = true
-        break
+        hasRole = true;
+        break;
       }
     }
 
     if (hasRole) {
-      return true
+      return true;
     }
 
     const reply = {
@@ -31,13 +31,13 @@ module.exports = async (command, usage) => {
       allowedMentions: {
         roles: [],
       },
-    }
+    };
 
-    if (message) message.reply(reply)
-    else if (interaction) interaction.reply(reply)
+    if (message) message.reply(reply);
+    else if (interaction) interaction.reply(reply);
 
-    return false
+    return false;
   }
 
-  return true
-}
+  return true;
+};

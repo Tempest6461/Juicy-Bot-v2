@@ -1,39 +1,36 @@
 module.exports = async (message, instance) => {
-    const { guild, content } = message
-    const { commandHandler } = instance
-    const { prefixHandler, commands, customCommands } = commandHandler
+  const { guild, content } = message;
+  const { commandHandler } = instance;
+  const { prefixHandler, commands, customCommands } = commandHandler;
 
-      const prefix = prefixHandler.get(guild?.id)
-      if (!content.startsWith(prefix)) {
-        return
-      }
+  const prefix = prefixHandler.get(guild?.id);
+  if (!content.startsWith(prefix)) {
+    return;
+  }
 
-      const args = content.split(/\s+/)
-      const commandName = args
-        .shift()
-        .substring(prefix.length)
-        .toLowerCase()
+  const args = content.split(/\s+/);
+  const commandName = args.shift().substring(prefix.length).toLowerCase();
 
-      const command = commands.get(commandName)
-      if (!command) {
-        customCommands.run(commandName, message)
-        return
-      }
+  const command = commands.get(commandName);
+  if (!command) {
+    customCommands.run(commandName, message);
+    return;
+  }
 
-      const { reply, deferReply } = command.commandObject
+  const { reply, deferReply } = command.commandObject;
 
-      if (deferReply) {
-        message.channel.sendTyping()
-      }
+  if (deferReply) {
+    message.channel.sendTyping();
+  }
 
-      const response = await commandHandler.runCommand(command, args, message)
-      if (!response) {
-        return
-      }
+  const response = await commandHandler.runCommand(command, args, message);
+  if (!response) {
+    return;
+  }
 
-      if (reply) {
-        message.reply(response).catch(() => {})
-      } else {
-        message.channel.send(response).catch(() => {})
-      }
-    }
+  if (reply) {
+    message.reply(response).catch(() => {});
+  } else {
+    message.channel.send(response).catch(() => {});
+  }
+};

@@ -1,11 +1,11 @@
-const channelCommands = require('../models/channel-commands-schema')
+const channelCommands = require("../models/channel-commands-schema");
 
 class ChannelCommands {
   // `${guildId}-${commandName}`: [channelIds]
-  _channelCommands = new Map()
+  _channelCommands = new Map();
 
   async action(action, guildId, commandName, channelId) {
-    const _id = `${guildId}-${commandName}`
+    const _id = `${guildId}-${commandName}`;
 
     const result = await channelCommands.findOneAndUpdate(
       {
@@ -13,7 +13,7 @@ class ChannelCommands {
       },
       {
         _id,
-        [action === 'add' ? '$addToSet' : '$pull']: {
+        [action === "add" ? "$addToSet" : "$pull"]: {
           channels: channelId,
         },
       },
@@ -21,34 +21,34 @@ class ChannelCommands {
         upsert: true,
         new: true,
       }
-    )
+    );
 
     // console.log(result)
-    this._channelCommands.set(_id, result.channels)
-    return result.channels
+    this._channelCommands.set(_id, result.channels);
+    return result.channels;
   }
 
   async add(guildId, commandName, channelId) {
-    return await this.action('add', guildId, commandName, channelId)
+    return await this.action("add", guildId, commandName, channelId);
   }
 
   async remove(guildId, commandName, channelId) {
-    return await this.action('remove', guildId, commandName, channelId)
+    return await this.action("remove", guildId, commandName, channelId);
   }
 
   async getAvailableChannels(guildId, commandName) {
-    const _id = `${guildId}-${commandName}`
-    let channels = this._channelCommands.get(_id)
+    const _id = `${guildId}-${commandName}`;
+    let channels = this._channelCommands.get(_id);
 
     if (!channels) {
       // console.log('Getting channels from database')
-      const results = await channelCommands.findById(_id)
-      channels = results ? results.channels : []
-      this._channelCommands.set(_id, channels)
+      const results = await channelCommands.findById(_id);
+      channels = results ? results.channels : [];
+      this._channelCommands.set(_id, channels);
     }
 
-    return channels
+    return channels;
   }
 }
 
-module.exports = ChannelCommands
+module.exports = ChannelCommands;

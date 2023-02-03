@@ -1,15 +1,15 @@
 const {
   PermissionFlagsBits,
   ApplicationCommandOptionType,
-} = require('discord.js')
-const requiredPermissions = require('../../models/required-permissions-schema')
+} = require("discord.js");
+const requiredPermissions = require("../../models/required-permissions-schema");
 
-const clearAllPermissions = 'Clear All Permissions'
+const clearAllPermissions = "Clear All Permissions";
 
 module.exports = {
-  description: 'Sets what commands require what permissions',
+  description: "Sets what commands require what permissions",
 
-  type: 'SLASH',
+  type: "SLASH",
   testOnly: true,
   guildOnly: true,
 
@@ -17,15 +17,15 @@ module.exports = {
 
   options: [
     {
-      name: 'command',
-      description: 'The command to set permissions to',
+      name: "command",
+      description: "The command to set permissions to",
       type: ApplicationCommandOptionType.String,
       required: true,
       autocomplete: true,
     },
     {
-      name: 'permission',
-      description: 'The permission to set for the command',
+      name: "permission",
+      description: "The permission to set for the command",
       type: ApplicationCommandOptionType.String,
       required: false,
       autocomplete: true,
@@ -33,38 +33,38 @@ module.exports = {
   ],
 
   autocomplete: (_, command, arg) => {
-    if (arg === 'command') {
-      return [...command.instance.commandHandler.commands.keys()]
-    } else if (arg === 'permission') {
-      return [clearAllPermissions, ...Object.keys(PermissionFlagsBits)]
+    if (arg === "command") {
+      return [...command.instance.commandHandler.commands.keys()];
+    } else if (arg === "permission") {
+      return [clearAllPermissions, ...Object.keys(PermissionFlagsBits)];
     }
   },
 
   callback: async ({ instance, guild, args }) => {
-    const [commandName, permission] = args
+    const [commandName, permission] = args;
 
-    const command = instance.commandHandler.commands.get(commandName)
+    const command = instance.commandHandler.commands.get(commandName);
     if (!command) {
-      return `The command "${commandName}" does not exist.`
+      return `The command "${commandName}" does not exist.`;
     }
 
-    const _id = `${guild.id}-${command.commandName}`
+    const _id = `${guild.id}-${command.commandName}`;
 
     if (!permission) {
-      const document = await requiredPermissions.findById(_id)
+      const document = await requiredPermissions.findById(_id);
 
       const permissions =
         document && document.permissions?.length
-          ? document.permissions.join(', ')
-          : 'None.'
+          ? document.permissions.join(", ")
+          : "None.";
 
-      return `Here are the permissions for "${commandName}": ${permissions}`
+      return `Here are the permissions for "${commandName}": ${permissions}`;
     }
 
     if (permission === clearAllPermissions) {
-      await requiredPermissions.deleteOne({ _id })
+      await requiredPermissions.deleteOne({ _id });
 
-      return `The command "${commandName}" no longer requires any permissions.`
+      return `The command "${commandName}" no longer requires any permissions.`;
     }
 
     const alreadyExists = await requiredPermissions.findOne({
@@ -72,7 +72,7 @@ module.exports = {
       permissions: {
         $in: [permission],
       },
-    })
+    });
 
     if (alreadyExists) {
       await requiredPermissions.findOneAndUpdate(
@@ -85,9 +85,9 @@ module.exports = {
             permissions: permission,
           },
         }
-      )
+      );
 
-      return `The command "${commandName}" no longer requires the permission "${permission}"`
+      return `The command "${commandName}" no longer requires the permission "${permission}"`;
     }
 
     await requiredPermissions.findOneAndUpdate(
@@ -103,8 +103,8 @@ module.exports = {
       {
         upsert: true,
       }
-    )
+    );
 
-    return `The command "${commandName}" now requires the permission "${permission}"`
+    return `The command "${commandName}" now requires the permission "${permission}"`;
   },
-}
+};

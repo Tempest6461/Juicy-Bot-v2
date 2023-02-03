@@ -12,14 +12,15 @@ module.exports = {
   guildOnly: true,
 
   cooldowns: {
-    perUserPerGuild: '5 m',
+    perUserPerGuild: "5 m",
   },
 
   permissions: [PermissionFlagsBits.SendMessages],
 
   callback: ({ client, interaction, message }) => {
-    try {client.emit("guildMemberRemove", interaction.member);}
-    catch (err) {
+    try {
+      client.emit("guildMemberRemove", interaction.member);
+    } catch (err) {
       console.log(err);
       client.emit("guildMemberRemove", message.member);
     }

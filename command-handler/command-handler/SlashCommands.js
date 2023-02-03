@@ -1,88 +1,88 @@
-const { ApplicationCommandOptionType } = require('discord.js')
+const { ApplicationCommandOptionType } = require("discord.js");
 
 class SlashCommands {
   constructor(client) {
-    this._client = client
+    this._client = client;
   }
 
   async getCommands(guildId) {
-    let commands
+    let commands;
 
     if (guildId) {
-      const guild = await this._client.guilds.fetch(guildId)
-      commands = guild.commands
+      const guild = await this._client.guilds.fetch(guildId);
+      commands = guild.commands;
     } else {
-      commands = this._client.application.commands
+      commands = this._client.application.commands;
     }
 
-    await commands.fetch()
+    await commands.fetch();
 
-    return commands
+    return commands;
   }
 
   areOptionsDifferent(options, existingOptions) {
     for (let a = 0; a < options.length; ++a) {
-      const option = options[a]
-      const existing = existingOptions[a]
+      const option = options[a];
+      const existing = existingOptions[a];
 
       if (
         option.name !== existing.name ||
         option.type !== existing.type ||
         option.description !== existing.description
       ) {
-        return true
+        return true;
       }
     }
 
-    return false
+    return false;
   }
 
   async create(name, description, options, guildId) {
-    const commands = await this.getCommands(guildId)
+    const commands = await this.getCommands(guildId);
 
-    const existingCommand = commands.cache.find((cmd) => cmd.name === name)
+    const existingCommand = commands.cache.find((cmd) => cmd.name === name);
     if (existingCommand) {
       const { description: existingDescription, options: existingOptions } =
-        existingCommand
+        existingCommand;
 
       if (
         description !== existingDescription ||
         options.length !== existingOptions.length ||
         this.areOptionsDifferent(options, existingOptions)
       ) {
-        console.log(`Updating the command "${name}"`)
+        console.log(`Updating the command "${name}"`);
 
         await commands.edit(existingCommand.id, {
           description,
           options,
-        })
+        });
       }
-      return
+      return;
     }
 
     await commands.create({
       name,
       description,
       options,
-    })
+    });
   }
 
   async delete(commandName, guildId) {
-    const commands = await this.getCommands(guildId)
+    const commands = await this.getCommands(guildId);
 
     const existingCommand = commands.cache.find(
       (cmd) => cmd.name === commandName
-    )
-    console.log(existingCommand)
+    );
+    console.log(existingCommand);
     if (!existingCommand) {
-      return
+      return;
     }
 
-    await existingCommand.delete()
+    await existingCommand.delete();
   }
 
-  createOptions({ expectedArgs = '', minArgs = 0 }) {
-    const options = []
+  createOptions({ expectedArgs = "", minArgs = 0 }) {
+    const options = [];
 
     // <num 1> <num 2>
 
@@ -90,23 +90,23 @@ class SlashCommands {
       const split = expectedArgs
         .substring(1, expectedArgs.length - 1)
         // num 1> <num 2
-        .split(/[>\]] [<\[]/)
+        .split(/[>\]] [<\[]/);
       // ['num 1', 'num 2']
 
       for (let a = 0; a < split.length; ++a) {
-        const arg = split[a]
+        const arg = split[a];
 
         options.push({
-          name: arg.toLowerCase().replace(/\s+/g, '-'),
+          name: arg.toLowerCase().replace(/\s+/g, "-"),
           description: arg,
           type: ApplicationCommandOptionType.String,
           required: a < minArgs,
-        })
+        });
       }
     }
 
-    return options
+    return options;
   }
 }
 
-module.exports = SlashCommands
+module.exports = SlashCommands;

@@ -18,8 +18,9 @@ module.exports = {
   permissions: [PermissionFlagsBits.SendMessages],
 
   callback: ({ client, interaction, message }) => {
-    try {client.emit("guildMemberAdd", interaction.member);}
-    catch (err) {
+    try {
+      client.emit("guildMemberAdd", interaction.member);
+    } catch (err) {
       console.log(err);
       client.emit("guildMemberAdd", message.member);
     }

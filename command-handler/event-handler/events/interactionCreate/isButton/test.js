@@ -1,3 +1,3 @@
 module.exports = (interaction) => {
-    interaction.reply('testing')
-}
+  interaction.reply("testing");
+};

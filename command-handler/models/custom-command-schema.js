@@ -1,4 +1,4 @@
-const { Schema, model, models } = require('mongoose')
+const { Schema, model, models } = require("mongoose");
 
 const customCommandSchema = new Schema({
   // guildId-commandName
@@ -10,7 +10,7 @@ const customCommandSchema = new Schema({
     type: String,
     required: true,
   },
-})
+});
 
-const name = 'custom-commands'
-module.exports = models[name] || model(name, customCommandSchema)
+const name = "custom-commands";
+module.exports = models[name] || model(name, customCommandSchema);

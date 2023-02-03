@@ -50,7 +50,7 @@ module.exports = {
         document && document.roles?.length
           ? document.roles.map((roleId) => `<@&${roleId}>`)
           : "None.";
-          
+
       return {
         content: `Here are the roles for "${commandName}": ${roles}`,
         allowedMentions: {
@@ -78,12 +78,12 @@ module.exports = {
           },
         },
         {
-          new: true
+          new: true,
         }
       );
 
       if (!newData.roles.length) {
-        await requiredroles.deleteOne({ _id })
+        await requiredroles.deleteOne({ _id });
       }
 
       return {

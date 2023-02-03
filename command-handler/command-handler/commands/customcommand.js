@@ -1,28 +1,28 @@
-const { PermissionFlagsBits } = require('discord.js')
+const { PermissionFlagsBits } = require("discord.js");
 
 module.exports = {
-  description: 'Creates a custom command',
+  description: "Creates a custom command",
 
   minArgs: 3,
-  syntaxError: 'Correct syntax: {PREFIX}customCommand {ARGS}',
-  expectedArgs: '<command name> <description> <response>',
+  syntaxError: "Correct syntax: {PREFIX}customCommand {ARGS}",
+  expectedArgs: "<command name> <description> <response>",
 
-  type: 'SLASH',
+  type: "SLASH",
   guildOnly: true,
   testOnly: false,
 
   permissions: [PermissionFlagsBits.Administrator],
 
   callback: async ({ instance, args, guild }) => {
-    const [commandName, description, response] = args
+    const [commandName, description, response] = args;
 
     await instance.commandHandler.customCommands.create(
       guild.id,
       commandName,
       description,
       response
-    )
+    );
 
-    return `Custom command "${commandName}" has been created!`
+    return `Custom command "${commandName}" has been created!`;
   },
-}
+};

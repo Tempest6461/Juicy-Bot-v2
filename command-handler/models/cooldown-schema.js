@@ -1,4 +1,4 @@
-const { Schema, model, models } = require('mongoose')
+const { Schema, model, models } = require("mongoose");
 
 const cooldownSchema = new Schema({
   // The key from Cooldowns.getKey()
@@ -10,7 +10,7 @@ const cooldownSchema = new Schema({
     type: Date,
     required: true,
   },
-})
+});
 
-const name = 'cooldowns'
-module.exports = models[name] || model(name, cooldownSchema)
+const name = "cooldowns";
+module.exports = models[name] || model(name, cooldownSchema);

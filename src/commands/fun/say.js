@@ -23,7 +23,9 @@ module.exports = {
     // console.log({message});
     // console.log({wordBlacklist})
 
-    let foundInText = wordBlacklist.some(blacklistedWord => message.toLowerCase().includes(blacklistedWord));
+    let foundInText = wordBlacklist.some((blacklistedWord) =>
+      message.toLowerCase().includes(blacklistedWord)
+    );
 
     if (message.includes("@everyone") || message.includes("@here")) {
       return {

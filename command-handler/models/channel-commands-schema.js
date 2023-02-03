@@ -1,4 +1,4 @@
-const { Schema, model, models } = require('mongoose')
+const { Schema, model, models } = require("mongoose");
 
 const channelCommandSchema = new Schema({
   // guildId-commandName
@@ -10,7 +10,7 @@ const channelCommandSchema = new Schema({
     type: [String],
     required: true,
   },
-})
+});
 
-const name = 'channel-commands'
-module.exports = models[name] || model(name, channelCommandSchema)
+const name = "channel-commands";
+module.exports = models[name] || model(name, channelCommandSchema);

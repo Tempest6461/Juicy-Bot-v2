@@ -1,50 +1,50 @@
-const disabledCommandSchema = require('../models/disabled-cmds-schema')
+const disabledCommandSchema = require("../models/disabled-cmds-schema");
 
 class DisabledCommands {
   // array of `${guildId}-${commandName}`
-  _disabledCommands = []
+  _disabledCommands = [];
 
   constructor() {
-    this.loadDisabledCommands()
+    this.loadDisabledCommands();
   }
 
   async loadDisabledCommands() {
-    const results = await disabledCommandSchema.find({})
+    const results = await disabledCommandSchema.find({});
 
     for (const result of results) {
-      this._disabledCommands.push(result._id)
+      this._disabledCommands.push(result._id);
     }
   }
 
   async disable(guildId, commandName) {
     if (this.isDisabled(guildId, commandName)) {
-      return
+      return;
     }
 
-    const _id = `${guildId}-${commandName}`
-    this._disabledCommands.push(_id)
+    const _id = `${guildId}-${commandName}`;
+    this._disabledCommands.push(_id);
 
     try {
       await new disabledCommandSchema({
         _id,
-      }).save()
+      }).save();
     } catch (ignored) {}
   }
 
   async enable(guildId, commandName) {
     if (!this.isDisabled(guildId, commandName)) {
-      return
+      return;
     }
 
-    const _id = `${guildId}-${commandName}`
-    this._disabledCommands = this._disabledCommands.filter((id) => id !== _id)
+    const _id = `${guildId}-${commandName}`;
+    this._disabledCommands = this._disabledCommands.filter((id) => id !== _id);
 
-    await disabledCommandSchema.deleteOne({ _id })
+    await disabledCommandSchema.deleteOne({ _id });
   }
 
   isDisabled(guildId, commandName) {
-    return this._disabledCommands.includes(`${guildId}-${commandName}`)
+    return this._disabledCommands.includes(`${guildId}-${commandName}`);
   }
 }
 
-module.exports = DisabledCommands
+module.exports = DisabledCommands;

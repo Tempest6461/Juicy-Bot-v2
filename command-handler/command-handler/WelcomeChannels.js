@@ -21,7 +21,7 @@ class WelcomeHandler {
         new: true,
       }
     );
-  //  console.log(result)
+    //  console.log(result)
     this._welcomeChannels.set(guildId, result.channelId);
     return result.channelId;
   }

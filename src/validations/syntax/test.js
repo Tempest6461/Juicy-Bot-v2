@@ -1,5 +1,5 @@
 module.exports = (command) => {
-    const { commandName, commandObject } = command
+  const { commandName, commandObject } = command;
 
-    console.log(commandName)
-}
+  console.log(commandName);
+};

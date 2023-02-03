@@ -32,7 +32,11 @@ module.exports = async (GuildMember, instance) => {
   const joinLeaveChannel = channels.cache.get(channel ?? systemChannelId);
   const selectedMessage = swapWelcomeMessages();
 
-  joinLeaveChannel.send(
-    `Welcome, <@${userId}> to ${guildName}! ` + selectedMessage
-  );
+  try {
+    joinLeaveChannel.send(
+      `Welcome, <@${userId}> to ${guildName}! ` + selectedMessage
+    );
+  } catch (err) {
+    console.log(`Error sending welcome message in ${guildName}: ${err}`);
+  }
 };

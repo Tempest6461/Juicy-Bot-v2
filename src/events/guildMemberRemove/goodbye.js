@@ -9,10 +9,11 @@ module.exports = async (GuildMember, instance) => {
   // console.log(channel)
   const joinLeaveChannel = channels.cache.get(channel ?? systemChannelId);
 
- try { joinLeaveChannel.send(
-    `Don't let the door hit you on the way out, <@${userId}>! `
-  )}
-  catch (err) {
-    console.log(err);
+  try {
+    joinLeaveChannel.send(
+      `Don't let the door hit you on the way out, <@${userId}>! `
+    );
+  } catch (err) {
+    console.log(`Error sending goodbye message in ${guildName}: ${err}`);
   }
 };

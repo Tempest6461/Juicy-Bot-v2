@@ -57,7 +57,7 @@ module.exports = {
             customId: "Testing",
             default: false,
             emoji: "🧪",
-          }
+          },
         ])
     );
 
@@ -141,10 +141,10 @@ module.exports = {
           name: "delcustomcmd",
           value: "`Delete a custom command.`",
           inline: true,
-        },
+        }
       );
 
-      const testingEmbed = new EmbedBuilder()
+    const testingEmbed = new EmbedBuilder()
       .setTitle("🧪 Testing")
       .setDescription("`Testing Commands.`")
       .setColor("Yellow")
