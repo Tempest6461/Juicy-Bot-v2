@@ -216,7 +216,7 @@ class CommandHandler {
     if (!folder) {
       return [];
     }
-    console.log(folder);
+    // console.log(folder);
     const validations = getAllFiles(folder).map((filePath) =>
       require(filePath)
     );

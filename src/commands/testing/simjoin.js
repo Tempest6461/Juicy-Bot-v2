@@ -21,7 +21,6 @@ module.exports = {
     try {
       client.emit("guildMemberAdd", interaction.member);
     } catch (err) {
-      console.log(err);
       client.emit("guildMemberAdd", message.member);
     }
     return {

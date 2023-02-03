@@ -32,7 +32,6 @@ module.exports = {
       await welcomeChannels.add(guild.id, channel.id);
       return `The welcoming channel has been set to ${channel}.`;
     } catch (err) {
-      console.log(err);
       return `There was an error setting the welcoming channel. Error: \`${err}\``;
     }
   },
