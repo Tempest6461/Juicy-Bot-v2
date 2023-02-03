@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const CommandHandler = require("./command-handler/CommandHandler");
 const Cooldowns = require("./util/Cooldowns");
 const EventHandler = require("./event-handler/EventHandler");
-const FeatureHandler = require("./util/FeatureHandler");
 
 class Main {
   constructor(obj) {
@@ -14,7 +13,6 @@ class Main {
     client,
     mongoUri,
     commandsDir,
-    featuresDir,
     testServers = [],
     botOwners = [],
     cooldownConfig = {},
@@ -44,10 +42,6 @@ class Main {
 
     if (commandsDir) {
       this._commandHandler = new CommandHandler(this, commandsDir, client);
-    }
-
-    if (featuresDir) {
-      new FeatureHandler(this, featuresDir, client);
     }
 
     this._eventHandler = new EventHandler(this, events, client);

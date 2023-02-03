@@ -32,7 +32,7 @@ class CommandHandler {
       ...this._validations,
       ...this.getValidations(instance.validations?.runtime),
     ];
-
+    
     this.readFiles();
   }
 
@@ -216,7 +216,7 @@ class CommandHandler {
     if (!folder) {
       return [];
     }
-
+    console.log(folder)
     const validations = getAllFiles(folder).map((filePath) =>
       require(filePath)
     );

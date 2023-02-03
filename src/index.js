@@ -34,7 +34,6 @@ client.on("ready", () => {
     client,
     mongoUri: process.env.MONGO_URI,
     commandsDir: path.join(__dirname, "commands"),
-    featuresDir: path.join(__dirname, "features"),
     testServers: ["529877137268670465"],
     botOwners: ["131562657680457729", "1014618816115916871", "243432636972793856"],
     cooldownConfig: {

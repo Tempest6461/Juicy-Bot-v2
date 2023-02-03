@@ -1,3 +1,4 @@
+const p = require('path')
 const fs = require('fs')
 
 const getAllFiles = (path, foldersOnly = false) => {
@@ -7,7 +8,7 @@ const getAllFiles = (path, foldersOnly = false) => {
   let filesFound = []
 
   for (const file of files) {
-    const fileName = `${path}\\${file.name}`
+    const fileName = p.join(path, file.name)
 
     if (file.isDirectory()) {
       if (foldersOnly) {
