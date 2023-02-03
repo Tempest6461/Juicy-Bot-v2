@@ -4,7 +4,7 @@ const {
   Partials,
   ActivityType,
 } = require("discord.js");
-const CH = require("command-handler");
+const CH = require("../command-handler");
 const welcome = require("./events/guildMemberAdd/welcome.js");
 const goodbye = require("./events/guildMemberRemove/goodbye.js");
 const path = require("path");

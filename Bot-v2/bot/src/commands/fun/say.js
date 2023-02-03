@@ -1,7 +1,5 @@
 const { PermissionFlagsBits } = require("discord.js");
-const {
-  wordBlacklist,
-} = require("../../../../command-handler/src/util/wordBlacklist");
+const wordBlacklist = require("../../../command-handler/util/wordBlacklist");
 
 module.exports = {
   name: "say",
@@ -20,11 +18,12 @@ module.exports = {
 
   permissions: [PermissionFlagsBits.SendMessages],
 
-  callback: ({ args, wordBlacklist }) => {
+  callback: ({ args }) => {
     const message = args.join(" ");
+    // console.log({message});
+    // console.log({wordBlacklist})
 
-    let foundInText = (wordBlacklist) =>
-      message.content.toLowerCase().includes(wordBlacklist);
+    let foundInText = wordBlacklist.some(blacklistedWord => message.toLowerCase().includes(blacklistedWord));
 
     if (message.includes("@everyone") || message.includes("@here")) {
       return {

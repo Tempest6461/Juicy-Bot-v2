@@ -10,6 +10,7 @@ const wordBlacklist = [
     "discord.com/gifts/",
     "discord.gifts/",
     "nigger",
+    "nigga",
     "faggot",
     "fag",
     "niglet",
@@ -17,7 +18,6 @@ const wordBlacklist = [
     "chink",
     "niggle",
     "coon",
-    "kys",
     "kill yourself",
 ]
 

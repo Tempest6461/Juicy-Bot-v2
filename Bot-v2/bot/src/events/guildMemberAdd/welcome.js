@@ -1,4 +1,4 @@
-const welcomeMessages = require("../../../../command-handler/src/util/welcomeMessages.js");
+const welcomeMessages = require("../../../command-handler/util/welcomeMessages.js");
 
 let usedMessages = [];
 
