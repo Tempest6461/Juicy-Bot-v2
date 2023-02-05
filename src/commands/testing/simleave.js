@@ -15,7 +15,7 @@ module.exports = {
     perUserPerGuild: "5 m",
   },
 
-  permissions: [PermissionFlagsBits.SendMessages],
+  permissions: [PermissionFlagsBits.Administrator],
 
   callback: ({ client, interaction, message }) => {
     try {
