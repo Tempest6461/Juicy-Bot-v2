@@ -11,7 +11,6 @@ module.exports = {
   minArgs: 1,
   correctSyntax: "Correct syntax: {PREFIX}welcome-setup {ARGS}",
   expectedArgs: "<channel>",
-  
 
   type: "SLASH",
   testOnly: false,
@@ -37,9 +36,15 @@ module.exports = {
 
     try {
       await welcomeChannels.add(guild.id, channel.id);
-      return `The welcoming channel has been set to ${channel}.`;
+      return {
+        content: `The welcoming channel has been set to ${channel}.`,
+        ephemeral: true,
+      };
     } catch (err) {
-      return `There was an error setting the welcoming channel. Error: \`${err}\``;
+      return {
+        content: `There was an error setting the welcoming channel. Error: \`${err}\``,
+        ephemeral: true,
+      };
     }
   },
 };
