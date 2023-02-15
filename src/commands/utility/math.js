@@ -32,7 +32,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle("Math")
-      .setDescription(`${question} = ${sum}`)
+      .setDescription(`\`${question}\` = ${sum}`)
       .setColor(0x0099ff);
 
     return {
