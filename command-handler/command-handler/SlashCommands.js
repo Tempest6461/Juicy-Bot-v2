@@ -15,13 +15,13 @@ class SlashCommands {
       } else {
         commands = this._client.application.commands;
       }
-    } catch (err) {
-      console.log(err);
+
+      await commands.fetch();
+
+      return commands;
+    } catch (error) {
+      console.log(error);
     }
-
-    await commands.fetch();
-
-    return commands;
   }
 
   areOptionsDifferent(options, existingOptions) {
