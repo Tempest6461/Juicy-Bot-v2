@@ -39,6 +39,7 @@ client.on("ready", () => {
       "131562657680457729",
       "1014618816115916871",
       "243432636972793856",
+      "1052879147392835634",
     ],
     cooldownConfig: {
       errorMessage: "Please wait {TIME}",

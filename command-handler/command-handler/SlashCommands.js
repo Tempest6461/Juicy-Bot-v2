@@ -8,11 +8,15 @@ class SlashCommands {
   async getCommands(guildId) {
     let commands;
 
-    if (guildId) {
-      const guild = await this._client.guilds.fetch(guildId);
-      commands = guild.commands;
-    } else {
-      commands = this._client.application.commands;
+    try {
+      if (guildId) {
+        const guild = await this._client.guilds.fetch(guildId);
+        commands = guild.commands;
+      } else {
+        commands = this._client.application.commands;
+      }
+    } catch (err) {
+      console.log(err);
     }
 
     await commands.fetch();

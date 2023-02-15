@@ -8,7 +8,9 @@ module.exports = {
   minArgs: 1,
   correctSyntax: "Correct syntax: {PREFIX}8ball {ARGS}",
   expectedArgs: "<Yes or no question>",
-  cooldown: 5,
+  cooldowns: {
+    perUserPerGuild: "10 s",
+  },
 
   type: "BOTH",
   testOnly: false,

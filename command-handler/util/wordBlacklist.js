@@ -19,6 +19,7 @@ const wordBlacklist = [
   "niggle",
   "coon",
   "kill yourself",
+  "nig",
 ];
 
 module.exports = wordBlacklist;

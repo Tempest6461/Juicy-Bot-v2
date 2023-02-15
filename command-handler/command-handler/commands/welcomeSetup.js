@@ -4,14 +4,21 @@ const {
 } = require("discord.js");
 
 module.exports = {
+  name: "welcome-setup",
+  category: "Default",
   description: "Setup the welcoming channel for your server.",
 
   minArgs: 1,
+  correctSyntax: "Correct syntax: {PREFIX}welcome-setup {ARGS}",
   expectedArgs: "<channel>",
+  
 
   type: "SLASH",
   testOnly: false,
   guildOnly: true,
+  cooldowns: {
+    perUserPerGuild: "1 m",
+  },
 
   permissions: [PermissionFlagsBits.Administrator],
 
