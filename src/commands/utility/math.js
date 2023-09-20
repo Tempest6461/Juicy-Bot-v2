@@ -23,6 +23,7 @@ module.exports = {
     let sum;
     try {
       sum = math.simplify(question);
+      answer = math.evaluate(sum);
     } catch (err) {
       return {
         content: "Sorry, I can't solve that.",
@@ -32,7 +33,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle("Math")
-      .setDescription(`\`${question}\` = ${sum}`)
+      .setDescription(`\`${question}\` = ${answer}`)
       .setColor(0x0099ff);
 
     return {

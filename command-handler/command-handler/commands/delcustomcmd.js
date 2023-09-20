@@ -16,6 +16,9 @@ module.exports = {
   callback: async ({ instance, text: commandName, guild }) => {
     await instance.commandHandler.customCommands.delete(guild.id, commandName);
 
-    return `Custom command "${commandName}" has been deleted!`;
+    return {
+      content: `Custom command "${commandName}" has been deleted!`,
+      ephemeral: true,
+    };
   },
 };

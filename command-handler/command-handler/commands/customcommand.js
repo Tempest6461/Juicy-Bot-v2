@@ -23,6 +23,9 @@ module.exports = {
       response
     );
 
-    return `Custom command "${commandName}" has been created!`;
+    return {
+      content: `Custom command "${commandName}" has been created!`,
+      ephemeral: true,
+    };
   },
 };
