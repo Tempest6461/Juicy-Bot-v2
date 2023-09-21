@@ -10,7 +10,7 @@ module.exports = {
     permissions: [PermissionFlagsBits.Administrator],
   
     callback: async ({ instance, guild }) => {
-      const customCommands = await instance.commandHandler.customCommands.getAll(guild.id);
+      const customCommands = await instance.commandHandler._customCommands.getAll(guild.id);
   
       if (customCommands.length === 0) {
         return {

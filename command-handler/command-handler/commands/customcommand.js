@@ -14,7 +14,9 @@ module.exports = {
   permissions: [PermissionFlagsBits.Administrator],
 
   callback: async ({ instance, args, guild }) => {
-    const [commandName, description, response] = args;
+    let [commandName, description, response] = args;
+
+    commandName = commandName.toLowerCase();
 
     await instance.commandHandler.customCommands.create(
       guild.id,
