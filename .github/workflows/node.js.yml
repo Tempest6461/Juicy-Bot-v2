@@ -37,7 +37,7 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           script: |
             pm2 delete all
-            cd /root/Juicy-Bot-v2/src
+            cd /root/Juicy-Bot-v2
             git pull
             npm install
-            pm2 start index.js
+            pm2 start src/index.js
