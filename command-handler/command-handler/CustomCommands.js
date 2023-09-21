@@ -54,6 +54,26 @@ class CustomCommands {
     await customCommandSchema.deleteOne({ _id });
   }
 
+  async deleteAll(guildId) {
+    try {
+      // Find all custom commands associated with the guild and delete them
+      const result = await customCommandSchema.deleteMany({ _id: { $regex: `^${guildId}-` } }).exec();
+
+      // Clear the custom commands stored in memory for the guild
+      for (const key of this._customCommands.keys()) {
+        if (key.startsWith(`${guildId}-`)) {
+          this._customCommands.delete(key);
+        }
+      }
+
+      console.log(`Deleted ${result.deletedCount} custom commands for guild ${guildId}`);
+      return result.deletedCount;
+    } catch (error) {
+      console.error("Error deleting custom commands:", error);
+      throw error;
+    }
+  }
+
   async run(commandName, message, interaction) {
     const guild = message ? message.guild : interaction.guild;
     if (!guild) {
@@ -69,6 +89,20 @@ class CustomCommands {
     if (message) message.channel.send(response).catch(() => {});
     else if (interaction) interaction.reply(response).catch(() => {});
   }
+
+  async getAllCommandsForGuild(guildId) {
+    try {
+      const commands = await customCommandSchema.find({ _id: { $regex: `^${guildId}-` } }).exec();
+      const resolvedCommands = await commands; // Resolve the Promise
+      console.log("Commands from Database:", resolvedCommands);
+      return resolvedCommands;
+    } catch (error) {
+      console.error("Error fetching custom commands:", error);
+      return [];
+    }
+  }
 }
+
+  
 
 module.exports = CustomCommands;
