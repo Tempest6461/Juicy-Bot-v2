@@ -57,7 +57,9 @@ class CustomCommands {
   async deleteAll(guildId) {
     try {
       // Find all custom commands associated with the guild and delete them
-      const result = await customCommandSchema.deleteMany({ _id: { $regex: `^${guildId}-` } }).exec();
+      const result = await customCommandSchema
+        .deleteMany({ _id: { $regex: `^${guildId}-` } })
+        .exec();
 
       // Clear the custom commands stored in memory for the guild
       for (const key of this._customCommands.keys()) {
@@ -66,12 +68,19 @@ class CustomCommands {
         }
       }
 
-      console.log(`Deleted ${result.deletedCount} custom commands for guild ${guildId}`);
+      console.log(
+        `Deleted ${result.deletedCount} custom commands for guild ${guildId}`
+      );
       return result.deletedCount;
     } catch (error) {
       console.error("Error deleting custom commands:", error);
       throw error;
     }
+  }
+
+  customCommandExists(guildId, commandName) {
+    const _id = `${guildId}-${commandName}`;
+    return this._customCommands.has(_id);
   }
 
   async run(commandName, message, interaction) {
@@ -92,7 +101,9 @@ class CustomCommands {
 
   async getAllCommandsForGuild(guildId) {
     try {
-      const commands = await customCommandSchema.find({ _id: { $regex: `^${guildId}-` } }).exec();
+      const commands = await customCommandSchema
+        .find({ _id: { $regex: `^${guildId}-` } })
+        .exec();
       const resolvedCommands = await commands; // Resolve the Promise
       // console.log("Commands from Database:", resolvedCommands);
       return resolvedCommands;
@@ -102,7 +113,5 @@ class CustomCommands {
     }
   }
 }
-
-  
 
 module.exports = CustomCommands;

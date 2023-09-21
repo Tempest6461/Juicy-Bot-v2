@@ -61,7 +61,9 @@ module.exports = {
       });
     } else if (action === "one" && commandName) {
       // Check if the command exists before attempting to delete
-      if (customCommandsHandler.commandExists(guild.id, commandName)) {
+      const commandExists = customCommandsHandler.customCommandExists(guild.id, commandName);
+
+      if (commandExists) {
         // Delete a single custom command in the guild
         await customCommandsHandler.delete(guild.id, commandName);
 
