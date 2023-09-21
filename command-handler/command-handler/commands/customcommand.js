@@ -16,7 +16,7 @@ module.exports = {
   callback: async ({ instance, args, guild }) => {
     let [commandName, description, response] = args;
 
-    commandName = commandName.toLowerCase().replace(/\s+/g, '-');
+    commandName = commandName.toLowerCase().replace(/\s+/g, '');
 
     await instance.commandHandler.customCommands.create(
       guild.id,

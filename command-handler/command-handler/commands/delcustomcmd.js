@@ -18,13 +18,14 @@ module.exports = {
       required: true,
       choices: [
         {
-          name: "Delete All",
-          value: "all",
-        },
-        {
           name: "Delete One",
           value: "one",
         },
+        {
+          name: "Delete All",
+          value: "all",
+        },
+        
       ],
     },
     {
@@ -59,13 +60,22 @@ module.exports = {
         ephemeral: true,
       });
     } else if (action === "one" && commandName) {
-      // Delete a single custom command in the guild
-      await customCommandsHandler.delete(guild.id, commandName);
-  
-      await interaction.reply({
-        content: `The custom command "${commandName}" has been deleted.`,
-        ephemeral: true,
-      });
+      // Check if the command exists before attempting to delete
+      if (customCommandsHandler.commandExists(guild.id, commandName)) {
+        // Delete a single custom command in the guild
+        await customCommandsHandler.delete(guild.id, commandName);
+
+        await interaction.reply({
+          content: `The custom command "${commandName}" has been deleted.`,
+          ephemeral: true,
+        });
+      } else {
+        // Command does not exist
+        await interaction.reply({
+          content: `The custom command "${commandName}" does not exist.`,
+          ephemeral: true,
+        });
+      }
     } else {
       // Invalid or missing command name
       await interaction.reply({
