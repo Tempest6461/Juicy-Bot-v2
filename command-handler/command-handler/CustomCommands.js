@@ -94,7 +94,7 @@ class CustomCommands {
     try {
       const commands = await customCommandSchema.find({ _id: { $regex: `^${guildId}-` } }).exec();
       const resolvedCommands = await commands; // Resolve the Promise
-      console.log("Commands from Database:", resolvedCommands);
+      // console.log("Commands from Database:", resolvedCommands);
       return resolvedCommands;
     } catch (error) {
       console.error("Error fetching custom commands:", error);
