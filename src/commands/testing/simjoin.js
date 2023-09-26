@@ -12,7 +12,7 @@ module.exports = {
   guildOnly: true,
 
   cooldowns: {
-    perUserPerGuild: "5 m",
+    perUserPerGuild: "10 s",
   },
 
   permissions: [PermissionFlagsBits.Administrator],
