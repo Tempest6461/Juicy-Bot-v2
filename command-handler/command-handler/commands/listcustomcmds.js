@@ -1,4 +1,9 @@
-const { PermissionFlagsBits, MessageActionRow, MessageButton, MessageEmbed } = require("discord.js");
+const {
+  PermissionFlagsBits,
+  MessageActionRow,
+  MessageButton,
+  MessageEmbed,
+} = require("discord.js");
 const CustomCommands = require("../CustomCommands");
 
 const ITEMS_PER_PAGE = 10; // Number of custom commands to display per page
@@ -30,11 +35,11 @@ module.exports = {
       }
 
       const commandList = customCommands
-  .map((cmd) => {
-    const commandName = cmd._id.split('-')[1]; // Split the _id and get the command name
-    return `• ${commandName}: ${cmd.response}`;
-  })
-  .join("\n");
+        .map((cmd) => {
+          const commandName = cmd._id.split("-")[1]; // Split the _id and get the command name
+          return `• ${commandName}: ${cmd.response}`;
+        })
+        .join("\n");
 
       return {
         content: `Custom Commands:\n${commandList}`,

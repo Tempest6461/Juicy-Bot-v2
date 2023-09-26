@@ -9,7 +9,7 @@ const welcome = require("./events/guildMemberAdd/welcome.js");
 const goodbye = require("./events/guildMemberRemove/goodbye.js");
 const path = require("path");
 require("dotenv/config");
-require('./server')
+require("./server");
 
 const client = new Client({
   intents: [

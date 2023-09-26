@@ -25,7 +25,6 @@ module.exports = {
           name: "Delete All",
           value: "all",
         },
-        
       ],
     },
     {
@@ -39,29 +38,32 @@ module.exports = {
   callback: async ({ instance, interaction, guild }) => {
     const { commandHandler } = instance;
     const customCommandsHandler = new CustomCommands(commandHandler);
-  
+
     // Accessing the values correctly
     const action = interaction.options.get("amount").value;
     const commandName = interaction.options.get("command_name")?.value;
-  
+
     if (action === "all") {
       // Delete all custom commands in the guild and get the count
       const deletedCount = await customCommandsHandler.deleteAll(guild.id);
-  
+
       let responseMessage;
       if (deletedCount === 0) {
         responseMessage = "No custom commands found to delete.";
       } else {
         responseMessage = `Deleted ${deletedCount} custom command(s).`;
       }
-  
+
       await interaction.reply({
         content: responseMessage,
         ephemeral: true,
       });
     } else if (action === "one" && commandName) {
       // Check if the command exists before attempting to delete
-      const commandExists = customCommandsHandler.customCommandExists(guild.id, commandName);
+      const commandExists = customCommandsHandler.customCommandExists(
+        guild.id,
+        commandName
+      );
 
       if (commandExists) {
         // Delete a single custom command in the guild
@@ -85,9 +87,5 @@ module.exports = {
         ephemeral: true,
       });
     }
-  },  
+  },
 };
-
-
-
-
