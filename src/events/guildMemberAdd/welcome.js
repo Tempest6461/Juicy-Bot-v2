@@ -4,7 +4,7 @@ let usedMessages = [];
 
 const swapWelcomeMessages = () => {
   if (welcomeMessages.length === 0) {
-    welcomeMessages = usedMessages;
+    welcomeMessages = [...usedMessages]; // Repopulate welcomeMessages with usedMessages
     usedMessages = [];
   }
 
@@ -12,10 +12,11 @@ const swapWelcomeMessages = () => {
     Math.random() * welcomeMessages.length
   );
 
-  const [selectedRandomMessage] = welcomeMessages.splice(
+  const selectedRandomMessage = welcomeMessages.splice(
     selectedRandomMessageIndex,
     1
-  );
+  )[0]; // Destructure the array to get the message
+  
   usedMessages.push(selectedRandomMessage);
 
   return selectedRandomMessage;
