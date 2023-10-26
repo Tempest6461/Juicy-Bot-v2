@@ -1,6 +1,8 @@
 const { PermissionFlagsBits } = require("discord.js");
 
 module.exports = {
+  name: "prefix",
+  category: "Utility",
   description: "Set the prefix for the server.",
 
   minArgs: 1,

@@ -2,11 +2,15 @@ const { PermissionFlagsBits } = require("discord.js");
 const CustomCommands = require("../CustomCommands");
 
 module.exports = {
+  name: "delcustomcmd",
+  category: "Utility",
   description: "Deletes a custom command or all custom commands in the guild",
 
-  type: "SLASH",
+  type: "BOTH",
   guildOnly: true,
   testOnly: false,
+
+  aliases: [ "dcc" ],
 
   permissions: [PermissionFlagsBits.Administrator],
 

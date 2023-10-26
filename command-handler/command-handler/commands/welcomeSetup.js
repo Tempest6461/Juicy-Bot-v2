@@ -4,12 +4,10 @@ const {
 } = require("discord.js");
 
 module.exports = {
-  name: "welcome-setup",
-  category: "Default",
+  name: "welcomesetup",
+  category: "Utility",
   description: "Setup the welcoming channel for your server.",
 
-  minArgs: 1,
-  correctSyntax: "Correct syntax: {PREFIX}welcome-setup {ARGS}",
   expectedArgs: "<channel>",
 
   type: "SLASH",
@@ -31,6 +29,13 @@ module.exports = {
 
   callback: async ({ instance, guild, interaction }) => {
     const channel = interaction.options.getChannel("channel");
+
+    if (!channel) {
+      return {
+        content: "You need to specify a channel for welcoming new members.",
+        ephemeral: true,
+      };
+    }
 
     const { welcomeChannels } = instance.commandHandler;
 

@@ -2,7 +2,7 @@ const { PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 
 module.exports = {
   name: "dice",
-  category: "Utility",
+  category: "Fun",
   description: "Rolls a die of your choice.",
   usage: "[type] [modifier]", // Argument to decide the type of die to roll and an optional modifier
 
@@ -152,7 +152,7 @@ module.exports = {
           embed.setImage("https://i.imgur.com/RI038hI.png");
           return { embeds: [embed] };
         case 20:
-          embed.setDescription("Critical success!");
+          embed.setDescription("You're a Natural!");
           embed.setImage("https://i.imgur.com/v3Tcyj3.png");
           return { embeds: [embed] };
         default:

@@ -1,15 +1,19 @@
 const { PermissionFlagsBits } = require("discord.js");
 
 module.exports = {
+  name: "customcommand",
+  category: "Utility",
   description: "Creates a custom command",
 
   minArgs: 3,
   syntaxError: "Correct syntax: {PREFIX}customCommand {ARGS}",
   expectedArgs: "<command name> <description> <response>",
 
-  type: "SLASH",
+  type: "BOTH",
   guildOnly: true,
   testOnly: false,
+
+  aliases: [ "cc" ],
 
   permissions: [PermissionFlagsBits.Administrator],
 

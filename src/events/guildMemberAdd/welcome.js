@@ -8,15 +8,12 @@ const swapWelcomeMessages = () => {
     usedMessages = [];
   }
 
-  const selectedRandomMessageIndex = Math.floor(
-    Math.random() * welcomeMessages.length
-  );
+  for (let i = welcomeMessages.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [welcomeMessages[i], welcomeMessages[j]] = [welcomeMessages[j], welcomeMessages[i]];
+  }
 
-  const selectedRandomMessage = welcomeMessages.splice(
-    selectedRandomMessageIndex,
-    1
-  )[0]; // Destructure the array to get the message
-  
+  const selectedRandomMessage = welcomeMessages.pop();
   usedMessages.push(selectedRandomMessage);
 
   return selectedRandomMessage;

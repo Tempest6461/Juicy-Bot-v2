@@ -9,11 +9,15 @@ const CustomCommands = require("../CustomCommands");
 const ITEMS_PER_PAGE = 10; // Number of custom commands to display per page
 
 module.exports = {
-  description: "Lists all custom commands",
+  name: "listcustomcmds",
+  category: "Utility",
+  description: "Lists all custom commands.",
 
-  type: "SLASH",
+  type: "BOTH",
   guildOnly: true,
   testOnly: false,
+
+  aliases: [ "lcc" ],
 
   permissions: [PermissionFlagsBits.Administrator],
 

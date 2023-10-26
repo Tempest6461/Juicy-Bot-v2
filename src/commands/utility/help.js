@@ -104,6 +104,21 @@ module.exports = {
           name: "say",
           value: "`Make the bot say something.`",
           inline: true,
+        },
+        {
+          name: "coinflip",
+          value: "`Flip a coin.`",
+          inline: true,
+        },
+        {
+          name: "dadjoke",
+          value: "`Get a random dad joke!`",
+          inline: true,
+        },
+        {
+          name: "probability",
+          value: "`Get the probability of something happening.`",
+          inline: true,
         }
       );
 
@@ -141,6 +156,11 @@ module.exports = {
           name: "delcustomcmd",
           value: "`Delete a custom command.`",
           inline: true,
+        },
+        {
+          name: "listcustomcmds",
+          value: "`Lists all custom commands.`",
+          inline: true,
         }
       );
 
@@ -159,6 +179,26 @@ module.exports = {
           value: "`Simulates a user joining the server.`",
           inline: true,
         }
+        // {
+        //   name: "requiredrole",
+        //   value: "`Set a required role for a command.`",
+        //   inline: true,
+        // },
+        // {
+        //   name: "requiredpermissions",
+        //   value: "`Sets what commands require what permissions.`",
+        //   inline: true,
+        // },
+        // {
+        //   name: "channelcommands",
+        //   value: "`Sets what channels a command can be used in.`",
+        //   inline: true,
+        // },
+        // {
+        //   name: "togglecommand",
+        //   value: "`Toggles a command on or off for your guild.`",
+        //   inline: true,
+        // },
       );
 
     const helpMenuSelect = async () => {

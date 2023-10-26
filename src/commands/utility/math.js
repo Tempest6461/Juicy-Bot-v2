@@ -3,7 +3,7 @@ const math = require("mathjs");
 
 module.exports = {
   name: "math",
-  category: "Misc",
+  category: "Utility",
   description: "Solves a math equation.",
 
   minArgs: 1,

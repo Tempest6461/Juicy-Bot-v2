@@ -50,7 +50,6 @@ client.on("ready", () => {
     disabledDefaultCommands: [
       "requiredroles",
       "requiredpermissions",
-      "requiredroles",
       "channelcommand",
       "togglecommand",
     ],
