@@ -15,7 +15,7 @@ module.exports = {
   correctSyntax: "Correct syntax: {PREFIX}help",
 
   type: "BOTH",
-  testOnly: true,
+  testOnly: false,
   reply: true,
   guildOnly: true,
 

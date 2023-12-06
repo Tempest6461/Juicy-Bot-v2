@@ -6,7 +6,6 @@ module.exports = {
   description: "Rolls a die of your choice.",
   usage: "[type] [modifier]", // Argument to decide the type of die to roll and an optional modifier
 
-  correctSyntax: "Correct syntax: {PREFIX}dice [type] [modifier]",
 
   options: [
     {
@@ -33,7 +32,6 @@ module.exports = {
     },
   ],
 
-  minArgs: 0,
   type: "BOTH",
   testOnly: false,
   reply: true,

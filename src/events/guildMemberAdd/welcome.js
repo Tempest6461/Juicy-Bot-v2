@@ -1,5 +1,5 @@
-const welcomeMessages = require("../../../command-handler/util/welcomeMessages.js");
-
+const originalWelcomeMessages = require("../../../command-handler/util/welcomeMessages.js");
+let welcomeMessages = [...originalWelcomeMessages];
 let usedMessages = [];
 
 const swapWelcomeMessages = () => {
