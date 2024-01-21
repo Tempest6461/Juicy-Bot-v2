@@ -192,7 +192,6 @@ const welcomeMessages = [
   "My son is dead! Well, he's dead to me.",
   "STOP HARBORING YOUR GREEK SOLDIERS IN THE HORSE.",
   "We invading the Gulf of Mexico with Super Soakers.",
-  "We broke up? Nah, she broke. I'm, coping really bad and seeing a therapist for her and my anxiety and my medical bills are, up.",
   "No money in the world will get me to love Rome!",
   "They call me the double O seven, because I have 0 skill, 0 women, and 7 money!",
   "Tip for ranked! don't",

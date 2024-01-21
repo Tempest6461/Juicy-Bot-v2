@@ -1,6 +1,5 @@
 const { InteractionType } = require("discord.js");
 const path = require("path");
-
 const getAllFiles = require("../util/get-all-files");
 
 class EventHandler {
@@ -29,10 +28,6 @@ class EventHandler {
 
     this.readFiles();
     this.registerEvents();
-  }
-
-  get welcome() {
-    return this._welcome;
   }
 
   async readFiles() {
@@ -73,18 +68,27 @@ class EventHandler {
   registerEvents() {
     const instance = this._instance;
 
-    for (const eventName of this._eventCallbacks.keys()) {
-      const functions = this._eventCallbacks.get(eventName);
-
-      this._client.on(eventName, async function () {
+    for (const [eventName, functions] of this._eventCallbacks) {
+      this._client.on(eventName, async (...args) => {
         for (const [func, dynamicValidation] of functions) {
-          if (dynamicValidation && !(await dynamicValidation(...arguments))) {
+          if (dynamicValidation && !(await dynamicValidation(...args))) {
             continue;
           }
-          func(...arguments, instance);
+          func(...args, instance);
         }
       });
     }
+
+    // ../../src/events/messageCreate/mentioned
+
+    const handleMentionFunc = require("../../src/events/messageCreate/mentioned");
+    const dynamicValidation = (message) => !message.author.bot;
+    this._client.on("messageCreate", async (message) => {
+      if (dynamicValidation && !(await dynamicValidation(message))) {
+        return;
+      }
+      handleMentionFunc(this._client, message);
+    });
   }
 }
 
