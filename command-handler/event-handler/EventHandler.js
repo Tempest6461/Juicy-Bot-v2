@@ -70,16 +70,16 @@ class EventHandler {
 
     for (const [eventName, functions] of this._eventCallbacks) {
       this._client.on(eventName, async (...args) => {
+        // console.log(`Event: ${eventName} triggered`);
         for (const [func, dynamicValidation] of functions) {
           if (dynamicValidation && !(await dynamicValidation(...args))) {
             continue;
           }
+          // console.log(`Executing function for event ${eventName}`);
           func(...args, instance);
         }
       });
     }
-
-    // ../../src/events/messageCreate/mentioned
 
     const handleMentionFunc = require("../../src/events/messageCreate/mentioned");
     const dynamicValidation = (message) => !message.author.bot;
@@ -89,6 +89,11 @@ class EventHandler {
       }
       handleMentionFunc(this._client, message);
     });
+
+    // Registering the guildMemberUpdate event
+    this._client.on('guildMemberUpdate', (oldMember, newMember) => {
+      // console.log("Test")
+    })
   }
 }
 

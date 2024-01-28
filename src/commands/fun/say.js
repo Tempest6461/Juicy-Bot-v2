@@ -30,7 +30,7 @@ module.exports = {
     if (message.includes("@everyone") || message.includes("@here")) {
       return {
         ephemeral: true,
-        content: "You cannot mention everyone or here.",
+        content: "You can't use global pings.",
       };
     } else if (message.includes("@")) {
       return {

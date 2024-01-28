@@ -64,6 +64,10 @@ class CommandHandler {
     return this._welcomeChannels;
   }
 
+  getCommandsList() {
+    return Array.from(this._commands.keys());
+  }
+
   async readFiles() {
     const defaultCommands = getAllFiles(path.join(__dirname, "./commands"));
     const files = getAllFiles(this._commandsDir);
@@ -71,6 +75,9 @@ class CommandHandler {
       ...this.getValidations(path.join(__dirname, "validations", "syntax")),
       ...this.getValidations(this._instance.validations?.syntax),
     ];
+
+    // console.log("Default commands path:", path.join(__dirname, "./commands"));
+    // console.log("Command directory path:", this._commandsDir);
 
     for (let file of [...defaultCommands, ...files]) {
       const commandObject = require(file);

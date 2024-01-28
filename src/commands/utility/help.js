@@ -161,6 +161,16 @@ module.exports = {
           name: "listcustomcmds",
           value: "`Lists all custom commands.`",
           inline: true,
+        },
+        {
+          name: "uptime",
+          value: "`Check the uptime of the bot.`",
+          inline: true,
+        },
+        {
+          name: "reminder",
+          value: "`Set a reminder.`",
+          inline: true,
         }
       );
 

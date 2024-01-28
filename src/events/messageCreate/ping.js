@@ -4,6 +4,7 @@ module.exports = (message) => {
     message.content === "Ping" ||
     message.content === "PING"
   ) {
-    message.channel.send("Pong!");
+    // message.channel.send("Pong!");
+    console.log("Ping test successful");
   }
 };
