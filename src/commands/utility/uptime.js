@@ -32,6 +32,8 @@ module.exports = {
 
     let uptime = `${days} days, ${hours} hours, ${minutes} minutes and ${seconds} seconds`;
 
-    message.reply(`My uptime is ${uptime}`);
+    return {
+      content: `My uptime is ${uptime}`,
+    }
   },
 };
