@@ -3,7 +3,7 @@ const SchizoCounterHandler = require('../../../command-handler/command-handler/S
 const schizoCounterHandler = new SchizoCounterHandler();
 
 module.exports = async (oldMember, newMember) => {
-    const userId = '131562657680457729';
+    const userId = '303592976330784768';
     const { id: memberId } = newMember.user;
 
     if (memberId === userId) {

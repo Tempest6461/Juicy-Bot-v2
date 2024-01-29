@@ -102,7 +102,7 @@ function handleMention(client, message) {
           console.error("Error timing out user:", error);
         }
       } else {
-        message.reply("This is abuse. I'm telling < @303592976330784768>."); // Juicy
+        message.reply("This is abuse. I'm telling <@303592976330784768>."); // Juicy
       }
     } else if (pingCount === 6) {
       // console.log("Handling sixth ping");
