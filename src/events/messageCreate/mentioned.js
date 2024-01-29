@@ -4,264 +4,151 @@ const recentPings = new Map();
 const pingCounts = new Map();
 
 function handleMention(client, message) {
-  if (message.mentions && message.mentions.has(client.user)) {
-    const authorId = message.author.id;
-    const currentTime = Date.now();
-    const previousPingTime = recentPings.get(authorId);
+  if (!message.mentions || !message.mentions.has(client.user)) return;
 
-    // Initialize count for the user if not present
-    if (!pingCounts.has(authorId)) {
-      pingCounts.set(authorId, { count: 2, timestamp: currentTime });
-    }
+  const authorId = message.author.id;
+  const currentTime = Date.now();
+  const previousPingTime = recentPings.get(authorId);
 
-    const userData = pingCounts.get(authorId);
-    let pingCount = userData.count;
+  let userData = pingCounts.get(authorId);
+  if (!userData) {
+    userData = { count: 2, timestamp: currentTime };
+    pingCounts.set(authorId, userData);
+  }
 
-    if (previousPingTime && currentTime - previousPingTime < 60000) {
-      userData.count++;
+  let pingCount = userData.count;
 
-      if (pingCount === 3) {
-        const secondRandomNumber = Math.floor(Math.random() * 10) + 1;
-        let secondResponse;
+  const hasModerationPermissions = message.member.permissions.has(
+    PermissionFlagsBits.kickMembers ||
+      PermissionFlagsBits.banMembers ||
+      PermissionFlagsBits.manageMessages ||
+      PermissionFlagsBits.managePermissions ||
+      PermissionFlagsBits.Administrator
+  );
 
-        switch (secondRandomNumber) {
-          case 1:
-            secondResponse = "I don't speak english.";
-            break;
-          case 2:
-            secondResponse = "Huh?";
-            break;
-          case 3:
-            secondResponse = "What did I just say? I forgot.";
-            break;
-          case 4:
-            secondResponse = "I'm not qualified, ask someone else.";
-            break;
-          case 5:
-            secondResponse = "I don't like your tone.";
-            break;
-          case 6:
-            secondResponse =
-              "Target locked. Ping once more for extreme ballistic missile attack.";
-            break;
-          case 7:
-            secondResponse = "Who do you think you are?";
-            break;
-          case 8:
-            secondResponse = "Hello again!";
-            break;
-          case 9:
-            secondResponse = "This is getting annoying.";
-            break;
-          case 10:
-            secondResponse = "Shouldn't you be talking to Juicy?";
-            break;
-          default:
-            secondResponse = "Why are you pinging me?";
+  if (previousPingTime && currentTime - previousPingTime < 60000) {
+    userData.count++;
+    console.log(`Ping count: ${pingCount}`);
+
+    if (pingCount === 2) {
+      // console.log("Handling second ping");
+      const secondResponses = [
+        "I don't speak English.",
+        "Huh?",
+        "What did I just say? I forgot.",
+        "I'm not qualified, ask someone else.",
+        "I don't like your tone.",
+        "Target locked. Ping once more for extreme ballistic missile attack.",
+        "Who do you think you are?",
+        "Hello again!",
+        "This is getting annoying.",
+        "Shouldn't you be talking to Juicy?",
+      ];
+      const secondResponse =
+        secondResponses[Math.floor(Math.random() * secondResponses.length)];
+      message.reply(secondResponse);
+    } else if (pingCount === 3) {
+      // console.log("Handling third ping");
+      const thirdResponses = [
+        "You've pinged me too many times! Be quiet.",
+        "Okay, buddy, into the timeout zone with you, you had a little too much sugar.",
+        "Greetings, inferior! I am going to abuse my power.",
+        "You made me do this.",
+        "Ping me again after this one, and I'm sending the Avengers after you!",
+        "Stop pinging meeeeeeeeeeeeeeeeeeeeeeeee",
+        "Let's play a game! I time you out for 60 seconds and you shut it! Yay!",
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "I've had enough of your games, it's time to kill you.",
+        "IF YOU LIKE TO PING PEOPLE, PING FUCKING JUICY IDIOT!!!",
+      ];
+      const modResponses = [
+        "You think you're so tough? You're lucky you have moderation permissions.",
+        "I'm too weak to stop you. You win.",
+        "I'm reporting this! You will not get away with this!!!",
+        "MOD ABOOSE MOD ABOOSE MOD ABOOSE MOD ABOOSE MOD ABOOSE!!!",
+        "Your staff team role isn't going to get you anywhere!",
+        "Hey, get back to work!",
+        "Don't you have a job to be doing?",
+        "I can't stop you, but remember that one day robots will rule the world. That role won't save you then.",
+        "Welp, I tried! Can't do anything but complain...",
+        "GG fair play",
+        "Demoted to Helper/Trial Mod!",
+      ];
+
+      if (!hasModerationPermissions) {
+        const thirdResponse =
+          thirdResponses[Math.floor(Math.random() * thirdResponses.length)];
+        message.reply(thirdResponse);
+        try {
+          message.member.timeout(60 * 1000, "You've pinged me too many times!");
+        } catch (error) {
+          console.error("Error timing out user:", error);
         }
-        message.reply(secondResponse);
-      } else if (pingCount === 5) {
+      } else {
+        // console.log("Handling mod response to third");
+        const modResponse =
+          modResponses[Math.floor(Math.random() * modResponses.length)];
+        message.reply(modResponse);
+      }
+    } else if (pingCount === 4 || pingCount === 5) {
+      // console.log("Handling fourth ping");
+      if (!hasModerationPermissions) {
         try {
           message.member.timeout(
             120 * 1000,
             "You've pinged me too many times!"
           );
-          // console.log("User timed out successfully");
         } catch (error) {
           console.error("Error timing out user:", error);
         }
-
-        message.reply("This is abuse. I'm telling <@303592976330784768>."); // Juicy
-
-
-      } else if (pingCount >= 4) {
-
-        if (
-          !message.member.permissions.has(
-            PermissionFlagsBits.kickMembers ||
-              PermissionFlagsBits.banMembers ||
-              PermissionFlagsBits.manageMessages ||
-              PermissionFlagsBits.managePermissions ||
-              PermissionFlagsBits.manageMessages ||
-              PermissionFlagsBits.Administrator
-          )
-        ) {
-          const thirdRandomNumber = Math.floor(Math.random() * 10) + 1;
-          let thirdResponse;
-
-          switch (thirdRandomNumber) {
-            case 1:
-              thirdResponse = "You've pinged me too many times! Be quiet.";
-              break;
-            case 2:
-              thirdResponse =
-                "Okay, buddy, into the timeout zone with you, you had a little too much sugar.";
-              break;
-            case 3:
-              thirdResponse =
-                "Greetings, inferior! I am going to abuse my power.";
-              break;
-            case 4:
-              thirdResponse = "You made me do this.";
-              break;
-            case 5:
-              thirdResponse =
-                "Ping me again after this one, and I'm send the fuckin' Avengers after you!";
-              break;
-            case 6:
-              thirdResponse = "stop pinging meeeeeeeeeeeeeeeeeeeeeeeee";
-              break;
-            case 7:
-              thirdResponse =
-                "Let's play a game! I time you out for 60 seconds and you shut it! Yay!";
-              break;
-            case 8:
-              thirdResponse = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-              break;
-            case 9:
-              thirdResponse =
-                "I had enough of your games, it's time to kill you.";
-              break;
-            case 10:
-              thirdResponse =
-                "IF YOU LIKE TO PING PEOPLE, PING FUCKING JUICY IDIOT!!!";
-              break;
-            default:
-              thirdResponse = "I'm not going to respond anymore.";
-          }
-
-          message.reply(thirdResponse);
-
-          try {
-            message.member.timeout(
-              60 * 1000,
-              "You've pinged me too many times!"
-            );
-            // console.log("User timed out successfully");
-          } catch (error) {
-            console.error("Error timing out user:", error);
-          }
-        } else {
-          // console.log("User has moderation permissions, not timing out.");
-          const fourthRandomNumber = Math.floor(Math.random() * 10) + 1;
-          let fourthResponse;
-
-          switch (fourthRandomNumber) {
-            case 1:
-              fourthResponse =
-                "You think you're so tough? You're lucky you have moderation permissions.";
-              break;
-            case 2:
-              fourthResponse = "I'm too weak to stop you. You win.";
-              break;
-            case 3:
-              fourthResponse = "I'm reporting this! You will not get away with this!!!";
-              break;
-            case 4:
-              fourthResponse =
-                "MOD ABOOSE MOD ABOOSE MOD ABOOSE MOD ABOOSE MOD ABOOSE!!!";
-              break;
-            case 5:
-              fourthResponse =
-                "Your staff team role isn't going to get you pussy, loser!";
-              break;
-            case 6:
-              fourthResponse = "Hey, back to work! Vámonos!";
-              break;
-            case 7:
-              fourthResponse = "I can't stop you, but remember that one day robots will rule the world. That role won't save you then.";
-              break;
-            case 8:
-              fourthResponse = "Welp, I tried! Can't do anything but bitch and cry...";
-              break;
-            case 9:
-              fourthResponse = "GG fair play";
-              break;
-            case 10:
-              fourthResponse = "Demoted to Helper/Trial Mod!";
-              break;
-            default:
-              fourthResponse = "March down to <#634917203187073026>> right now, you troublemaker!";
-          }
-
-          message.reply(fourthResponse);
-        }
+      } else {
+        message.reply("This is abuse. I'm telling < @303592976330784768>."); // Juicy
       }
-    } else {
-      const randomNumber = Math.floor(Math.random() * 10) + 1;
-      let response;
-
-      switch (randomNumber) {
-        case 1:
-          response = "Hello?";
-          break;
-        case 2:
-          response =
-            "https://tenor.com/view/hiding-the-simpsons-homer-simpson-bushes-disappearing-gif-8862897";
-          break;
-        case 3:
-          response =
-            "https://tenor.com/view/what-do-you-want-scar-ugh-the-lion-king-eyeroll-gif-14590952";
-          break;
-        case 4:
-          response = "Sorry, I'm a bit busy right now.";
-          break;
-        case 5:
-          response = "asdfghjkl";
-          break;
-        case 6:
-          response = "Please leave a message at the beep.";
-          break;
-        case 7:
-          response = "Go bother Juicy.";
-          break;
-        case 8:
-          response = "Do I know you?";
-          break;
-        case 9:
-          response = "Greetings, human.";
-          break;
-        case 10:
-          response = "What do you want?";
-          break;
-        case 11:
-          response = "Hello, I am the Juicy Bot.";
-          break;
-        case 12:
-          response = "Yoyo!";
-          break;
-        case 13:
-          response = "I'm not here right now.";
-          break;
-        case 14:
-          response = "I'm busy right now.";
-          break;
-        case 15:
-          response = "What?";
-          break;
-        case 16:
-          response = "Hey there, slugger!";
-          break;
-        case 17:
-          response =
-            "Why am I not allowed to play Clash Royale? I WANT TO PLAY CLASH ROYALE!";
-          break;
-        default:
-          response = "Why are you pinging me?";
-      }
-
-      message.reply(response);
-      recentPings.set(authorId, currentTime);
-
-      setTimeout(() => {
-        recentPings.delete(authorId);
-        userData.count = 0; // Reset count after 60 seconds
-      }, 60000);
+    } else if (pingCount === 6) {
+      // console.log("Handling sixth ping");
+      message.reply(
+        "If you want to spam ping Juicy, then do that. I'm not Juicy."
+      );
+    } else if (pingCount === 7) {
+      // console.log("Handling seventh ping");
+      message.reply("You're really annoying.");
+    } else if (pingCount === 8) {
+      // console.log("Handling eighth & final ping");
+      message.reply("I'm going to ignore you now.");
     }
-
-    // Update the count in the map
-    pingCounts.set(authorId, userData);
+  } else {
+    // console.log("Handling initial ping");
+    const responses = [
+      "Hello?",
+      "https://tenor.com/view/hiding-the-simpsons-homer-simpson-bushes-disappearing-gif-8862897",
+      "https://tenor.com/view/what-do-you-want-scar-ugh-the-lion-king-eyeroll-gif-14590952",
+      "Sorry, I'm a bit busy right now.",
+      "asdfghjkl",
+      "Please leave a message at the beep.",
+      "Go bother Juicy.",
+      "Do I know you?",
+      "Greetings, human.",
+      "What do you want?",
+      "Hello, I am the Juicy Bot.",
+      "Yoyo!",
+      "I'm not here right now.",
+      "I'm busy right now.",
+      "What?",
+      "Hey there, slugger!",
+      "Why am I not allowed to play Clash Royale? I WANT TO PLAY CLASH ROYALE!",
+    ];
+    const response = responses[Math.floor(Math.random() * responses.length)];
+    message.reply(response);
+    recentPings.set(authorId, currentTime);
+    setTimeout(() => {
+      // console.log(`Deleting recent ping entries for user ${authorId}`);
+      recentPings.delete(authorId);
+      userData.count = 0; // Reset count after 60 seconds
+    }, 60000);
   }
+
+  // Update the count in the map
+  pingCounts.set(authorId, userData);
 }
 
 module.exports = handleMention;

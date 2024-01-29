@@ -9,6 +9,7 @@ const CustomCommands = require("./CustomCommands");
 const DisabledCommands = require("./DisabledCommands");
 const PrefixHandler = require("./PrefixHandler");
 const WelcomeChannels = require("./WelcomeChannels");
+const SchizoCounter = require("./SchizoCounter");
 
 class CommandHandler {
   // <commandName, instance of the Command class>
@@ -21,6 +22,7 @@ class CommandHandler {
   _disabledCommands = new DisabledCommands();
   _prefixes = new PrefixHandler();
   _welcomeChannels = new WelcomeChannels();
+  _schizoCounter = new SchizoCounter();
 
   constructor(instance, commandsDir, client) {
     this._instance = instance;
@@ -62,6 +64,10 @@ class CommandHandler {
 
   get welcomeChannels() {
     return this._welcomeChannels;
+  }
+
+  get schizoCounter() {
+    return this._schizoCounter;
   }
 
   getCommandsList() {

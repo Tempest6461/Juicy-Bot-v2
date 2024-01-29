@@ -89,11 +89,6 @@ class EventHandler {
       }
       handleMentionFunc(this._client, message);
     });
-
-    // Registering the guildMemberUpdate event
-    this._client.on('guildMemberUpdate', (oldMember, newMember) => {
-      // console.log("Test")
-    })
   }
 }
 
