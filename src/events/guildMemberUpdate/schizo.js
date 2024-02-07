@@ -3,7 +3,9 @@ const SchizoCounterHandler = require('../../../command-handler/command-handler/S
 const schizoCounterHandler = new SchizoCounterHandler();
 
 module.exports = async (oldMember, newMember) => {
-    const userId = '303592976330784768';
+    // const userId = '303592976330784768';    // Juicy's user ID
+    const userId = '131562657680457729';    // Temps's user ID
+
     const { id: memberId } = newMember.user;
 
     if (memberId === userId) {
@@ -25,8 +27,8 @@ module.exports = async (oldMember, newMember) => {
                 if (generalChannel) {
                     // Get the count of nickname changes from the database
                     const nicknameChangeCount = await schizoCounterHandler.getNicknameChangeCount(newMember.user.id);
-                    generalChannel.send(`Juicy is having another identity crisis. They changed their nickname from ${oldNickname || 'none'} to ${newNickname || 'none'}.`);
-                    generalChannel.send(`Schizo counter: ${nicknameChangeCount}`);
+                    generalChannel.send(`Juicy is having another identity crisis. They changed their nickname from ${oldNickname || 'none'} to ${newNickname || 'none'}. 
+Schizo counter: ${nicknameChangeCount}`);
                 } else {
                     console.log(`No channel found with the word "general" in its name and no system messages channel.`);
                 }
