@@ -1,7 +1,6 @@
 const { Schema, model, models } = require("mongoose");
 
 const serverStatusSchema = new Schema({
-  // guildId-serverIP (unique identifier)
   _id: {
     type: String,
     required: true,
@@ -11,12 +10,12 @@ const serverStatusSchema = new Schema({
     required: true,
   },
   interval: {
-    type: Number, // Interval in minutes
+    type: Number,
     required: true,
   },
-  channelId: {
-    type: String,  // Optional: Store the channel ID where the status updates should be sent
-    default: null,
+  channelIds: {
+    type: [String],  // Store an array of channel IDs
+    default: [],     // Default to an empty array
   },
 });
 

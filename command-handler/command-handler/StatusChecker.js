@@ -19,7 +19,7 @@ async function checkServerStatus(client) {
     const servers = await ServerStatus.find(); // Get all server IPs and intervals from DB
 
     for (const server of servers) {
-      const { serverIP, interval, channelId } = server; // Assuming channelId is stored in DB
+      const { serverIP, interval, channelIds } = server; // Assuming channelIds is stored in DB
       const url = `https://api.mcstatus.io/v2/status/java/${serverIP}`;
 
       try {
@@ -34,7 +34,12 @@ async function checkServerStatus(client) {
               .setTitle(`${serverIP} is Offline`)
               .setDescription("The Minecraft server is currently offline.")
               .setTimestamp();
-            await sendStatusMessage(client, channelId, embed); // Send message if status changed
+            
+            // Send status message to all channels associated with the server
+            for (const channelId of channelIds) {
+              await sendStatusMessage(client, channelId, embed);
+            }
+
             previousStatuses[serverIP] = false; // Update the status to offline
           }
         } else {
@@ -45,7 +50,12 @@ async function checkServerStatus(client) {
               .setTitle(`${serverIP} is Online`)
               .setDescription("The Minecraft server is back online!")
               .setTimestamp();
-            await sendStatusMessage(client, channelId, embed); // Send message if status changed
+            
+            // Send status message to all channels associated with the server
+            for (const channelId of channelIds) {
+              await sendStatusMessage(client, channelId, embed);
+            }
+
             previousStatuses[serverIP] = true; // Update the status to online
           }
         }

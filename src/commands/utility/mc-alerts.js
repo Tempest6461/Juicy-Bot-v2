@@ -10,7 +10,7 @@ module.exports = {
   expectedArgs: "<server IP> <check interval in minutes> <channel>",
 
   type: "BOTH",
-  testOnly: false,
+  testOnly: true,
   reply: true,
   guildOnly: true,
 
