@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const CommandHandler = require("./command-handler/CommandHandler");
 const Cooldowns = require("./util/Cooldowns");
 const EventHandler = require("./event-handler/EventHandler");
+const { startMonitoring } = require("./command-handler/StatusChecker");  // Import startMonitoring
 
 class Main {
   constructor(obj) {
@@ -45,6 +46,9 @@ class Main {
     }
 
     this._eventHandler = new EventHandler(this, events, client);
+
+     // Start monitoring server status using StatusChecker
+     startMonitoring(client);  // Ensure the status checker starts when the bot is ready
   }
 
   get testServers() {
