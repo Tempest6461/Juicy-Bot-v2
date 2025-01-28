@@ -37,7 +37,7 @@ module.exports = {
       name: "channel",
       description: "The channel to send status updates.",
       type: ApplicationCommandOptionType.Channel,
-      required: false,
+      required: required => required.action === "start", // Only required when starting monitoring
     },
   ],
 
