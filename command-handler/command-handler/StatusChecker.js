@@ -1,75 +1,74 @@
 const { EmbedBuilder } = require("discord.js");
 
-let previousStatuses = {};
-
 async function checkServerStatus(client) {
-  if (!client) {
-    console.error("Client is undefined!");
-    return;
-  }
-
   const { default: ServerStatus } = await import("../../command-handler/models/server-status-schema.js");
   const fetch = (await import("node-fetch")).default;
-  const servers = await ServerStatus.find({ isMonitoring: true });
 
-  const currentTime = Date.now();
+  const servers = await ServerStatus.find({ isMonitoring: true }); // Get all servers being monitored
 
+  // Check the status of each server
   for (const server of servers) {
-    const { serverIP, interval, channelIds, lastChecked } = server;
-    const nextCheckTime = lastChecked ? lastChecked + interval * 60000 : 0;
-
-    if (currentTime < nextCheckTime) {
-      continue; // Skip this server if it's not time to check it yet
-    }
-
-    const url = `https://api.mcstatus.io/v2/status/java/${serverIP}`;
+    const { serverIP, channelIds, previousStatus } = server;
 
     try {
+      const url = `https://api.mcstatus.io/v2/status/java/${serverIP}`;
       const response = await fetch(url);
       const data = await response.json();
 
-      const embed = new EmbedBuilder()
-        .setTimestamp()
-        .setTitle(`${serverIP} Status Update`);
+      const isOnline = data.online;
 
-      if (!data.online) {
-        if (previousStatuses[serverIP] !== false) {
-          embed.setColor(0xff0000).setDescription("The server is currently **offline**.");
-          for (const channelId of channelIds) {
-            await sendStatusMessage(client, channelId, embed);
-          }
-          previousStatuses[serverIP] = false;
-        }
-      } else {
-        if (previousStatuses[serverIP] !== true) {
-          embed.setColor(0x00ff00).setDescription("The server is now **online**.");
-          for (const channelId of channelIds) {
-            await sendStatusMessage(client, channelId, embed);
-          }
-          previousStatuses[serverIP] = true;
+      // Check if the status has changed
+      if (previousStatus !== isOnline) {
+        // Update the status in the database
+        server.previousStatus = isOnline;
+        await server.save();
+
+        // Create an embed and send status updates
+        const embed = createStatusEmbed(serverIP, isOnline);
+        for (const channelId of channelIds) {
+          await sendStatusMessage(client, channelId, embed);
         }
       }
-
-      // Update lastChecked time in the database
-      server.lastChecked = currentTime;
-      await server.save();
     } catch (error) {
-      console.error(`Error fetching status for ${serverIP}:`, error);
+      console.error(`Error checking server ${serverIP}:`, error);
     }
   }
 }
 
+// Create an embed for the status update
+function createStatusEmbed(serverIP, isOnline) {
+  const embed = new EmbedBuilder()
+    .setTitle(`${serverIP} Status Update`)
+    .setTimestamp();
+  if (isOnline) {
+    embed.setColor(0x00ff00).setDescription("The server is now **online**.");
+  } else {
+    embed.setColor(0xff0000).setDescription("The server is currently **offline**.");
+  }
+  return embed;
+}
+
+// Send a status message to the specified channel
 async function sendStatusMessage(client, channelId, embed) {
   try {
     const channel = await client.channels.fetch(channelId);
-    if (channel) await channel.send({ embeds: [embed] });
+
+    if (channel.isThread()) { 
+      if (channel.joinable) await channel.join(); // Join the thread if possible
+    }
+
+    await channel.send({ embeds: [embed] });
   } catch (error) {
-    console.error(`Error sending message to channel ${channelId}:`, error);
+    if (error.code === 50001) {
+      console.error(`The bot isn't in the guild of channel ${channelId}.`);
+    } else {
+      console.error(`Error sending message to channel ${channelId}:`, error);
+    }
   }
 }
 
-async function startMonitoring(client) {
-  setInterval(() => checkServerStatus(client), 60000); // Global check every minute
+function startMonitoring(client) {
+  setInterval(() => checkServerStatus(client), 60000); // Check all servers every minute
 }
 
 module.exports = { startMonitoring };
