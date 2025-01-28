@@ -24,7 +24,7 @@ module.exports = {
 
     try {
       // Log the full URL to debug
-      console.log(`Fetching server status from: ${url}`);
+    //   console.log(`Fetching server status from: ${url}`);
 
       const fetch = (await import("node-fetch")).default;
       const response = await fetch(url);
