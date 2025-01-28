@@ -2,7 +2,7 @@ const { PermissionFlagsBits } = require("discord.js");
 
 const recentPings = new Map();
 const pingCounts = new Map();
-const JUICY_ID = "131562657680457729"; // Juicy's Discord ID
+const JUICY_ID = "303592976330784768"; // Juicy's Discord ID
 
 function getRandomResponse(responses) {
   return responses[Math.floor(Math.random() * responses.length)];
