@@ -15,7 +15,10 @@ function handleMention(client, message) {
   const currentTime = Date.now();
   const previousPingTime = recentPings.get(authorId);
 
-  let userData = pingCounts.get(authorId) || { count: 0, timestamp: currentTime };
+  let userData = pingCounts.get(authorId) || {
+    count: 0,
+    timestamp: currentTime,
+  };
   userData.count++;
   pingCounts.set(authorId, userData);
 
@@ -30,7 +33,12 @@ function handleMention(client, message) {
 
   if (authorId === JUICY_ID) {
     // Special handling for Juicy
-    const juicyResponses = ["Hello Father.", "What can I do for you, Father?", "I'm the real Juicy, you're just a cheap imitation!"];
+    const juicyResponses = [
+      "Hello Father.",
+      "What can I do for you, Father?",
+      "I'm the real Juicy, you're just a cheap imitation!",
+      "Hi this is the real Juicy teehee wire me 10,000,000 banknotes",
+    ];
     message.reply(getRandomResponse(juicyResponses));
     return;
   }
@@ -68,6 +76,9 @@ function handleInitialPing(message, authorId) {
     "What?",
     "Hey there, slugger!",
     "Why am I not allowed to play Clash Royale? I WANT TO PLAY CLASH ROYALE!",
+    "I'm a little busy yoinking my turkey leg. Buttering my asparagus. Cranning my berries. Mashing my potatoes. Making my sausage gravy. Tugging my pigskin. It ain't even Thanksgiving either, and boy, you look like the main course.",
+    "What's popping, Jimbo?",
+    "If you were trying to ping Juicy, he changed his name to FeetLicker. Again.",
   ];
 
   const response = getRandomResponse(responses);
@@ -87,6 +98,8 @@ function handleRepeatedPing(message, pingCount, hasModerationPermissions) {
     "Hello again!",
     "This is getting annoying.",
     "Shouldn't you be talking to Juicy?",
+    "Ping me again for a special gift!",
+    "Sorry, I'm retarded? Ping me again to get a timeout for bullying the mentally feeble.",
   ];
 
   const thirdResponses = [
@@ -100,6 +113,10 @@ function handleRepeatedPing(message, pingCount, hasModerationPermissions) {
     "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     "I've had enough of your games, it's time to kill you.",
     "IF YOU LIKE TO PING PEOPLE, PING FUCKING JUICY IDIOT!!!",
+    "I was created for this. I was created for this? I WAS CREATED FOR THIS!",
+    "You are one clingy bitch!!!",
+    "I was programmed to time people out if they pinged me four times. But for you? You get the early bird special.",
+
   ];
 
   const modResponses = [
@@ -138,7 +155,9 @@ function handleHighPingCount(message, pingCount, hasModerationPermissions) {
       message.reply("This is abuse. I'm telling <@303592976330784768>.");
     }
   } else if (pingCount === 6) {
-    message.reply("If you want to spam ping Juicy, then do that. I'm not Juicy.");
+    message.reply(
+      "If you want to spam ping Juicy, then do that. I'm not Juicy."
+    );
   } else if (pingCount === 7) {
     message.reply("You're really annoying.");
   } else if (pingCount === 8) {

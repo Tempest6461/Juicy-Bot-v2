@@ -37,7 +37,7 @@ module.exports = {
       name: "channel",
       description: "The channel to send status updates.",
       type: ApplicationCommandOptionType.Channel,
-      required: required => required.action === "start", // Only required when starting monitoring
+      required: true, // Channel is now required for both start and stop
     },
   ],
 
@@ -51,7 +51,7 @@ module.exports = {
     }
 
     if (action === "stop") {
-      return await stopMonitoring({ serverIP });
+      return await stopMonitoring({ serverIP, channel });
     }
 
     return { content: "Invalid action. Use either `start` or `stop`.", ephemeral: true };
@@ -61,13 +61,13 @@ module.exports = {
 // Function to start monitoring
 async function startMonitoring({ serverIP, channel, client }) {
   try {
-    const existingServer = await ServerStatus.findOne({ serverIP });
+    let existingServer = await ServerStatus.findOne({ serverIP });
 
     if (existingServer) {
       existingServer.isMonitoring = true;
 
-      // Add the channel ID if not already present
-      if (channel && !existingServer.channelIds.includes(channel.id)) {
+      // Add the channel ID only if it's not already in the array
+      if (!existingServer.channelIds.includes(channel.id)) {
         existingServer.channelIds.push(channel.id);
       }
 
@@ -78,34 +78,43 @@ async function startMonitoring({ serverIP, channel, client }) {
         _id: serverIP,
         serverIP,
         isMonitoring: true,
-        channelIds: channel ? [channel.id] : [],
+        channelIds: [channel.id],
       });
 
       await newServer.save();
       console.log(`Started monitoring server ${serverIP}.`);
     }
 
-    return { content: `Monitoring started for server **${serverIP}**.` };
+    return { content: `Monitoring started for server **${serverIP}** in <#${channel.id}>.` };
   } catch (error) {
     console.error("Error starting monitoring:", error);
     return { content: "Failed to start monitoring. Please try again later.", ephemeral: true };
   }
 }
 
-// Function to stop monitoring
-async function stopMonitoring({ serverIP }) {
+// Function to stop monitoring for a specific channel
+async function stopMonitoring({ serverIP, channel }) {
   try {
-    const existingServer = await ServerStatus.findOne({ serverIP }); // Find the server in the database
+    let existingServer = await ServerStatus.findOne({ serverIP });
 
     if (!existingServer || !existingServer.isMonitoring) {
       return { content: `Server **${serverIP}** is not currently being monitored.`, ephemeral: true };
     }
 
-    existingServer.isMonitoring = false;
-    await existingServer.save(); 
-    console.log(`Stopped monitoring server ${serverIP}.`);
+    // Remove the specified channel from the array
+    existingServer.channelIds = existingServer.channelIds.filter(id => id !== channel.id);
 
-    return { content: `Monitoring stopped for server **${serverIP}**.` };
+    if (existingServer.channelIds.length === 0) {
+      // No channels left, stop monitoring entirely
+      existingServer.isMonitoring = false;
+      console.log(`Stopped all monitoring for server ${serverIP}.`);
+    } else {
+      console.log(`Removed channel ${channel.id} from monitoring for ${serverIP}.`);
+    }
+
+    await existingServer.save();
+
+    return { content: `Monitoring stopped for server **${serverIP}** in <#${channel.id}>.` };
   } catch (error) {
     console.error("Error stopping monitoring:", error);
     return { content: "Failed to stop monitoring. Please try again later.", ephemeral: true };
