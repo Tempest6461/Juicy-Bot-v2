@@ -62,7 +62,7 @@ function createStatusEmbed(serverIP, isOnline) {
     embed.setColor(0xff0000).setDescription("The server is currently **offline**.");
   }
   return embed;
-}
+} 
 
 // Send a status message to the specified channel
 async function sendStatusMessage(client, channelId, embed) {
