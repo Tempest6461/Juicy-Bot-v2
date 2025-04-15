@@ -18,7 +18,7 @@ module.exports = async (oldMember, newMember) => {
 
                 if (generalChannel) {
                     const nicknameChangeCount = await schizoCounterHandler.getNicknameChangeCount(userId);
-                    generalChannel.send(`Juicy is having another identity crisis. They changed their nickname from ${oldNickname || 'none'} to ${newNickname || 'none'}.\nSchizo counter: ${nicknameChangeCount}`);
+                    generalChannel.send(`Juicy is having another identity crisis. He used to be ${oldNickname || 'none'}, now he's  ${newNickname || 'none'}.\nMental Breakdowns: ${nicknameChangeCount}`);
                 } else {
                     console.log(`No "general" channel or system channel found.`);
                 }
