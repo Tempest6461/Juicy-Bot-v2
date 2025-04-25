@@ -86,7 +86,7 @@ const juicyResponses = [
   "Hi this is the real Juicy teehee wire me 10,000,000 banknotes",
 ];
 
-// Utility: pick N random items
+// Utility: pick N random elements
 function sample(arr, n) {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -144,22 +144,34 @@ module.exports = async function handleMention(client, message) {
   // Always try AI first
   try {
     await message.channel.sendTyping();
-    const userText = message.content
-      .replace(/<@!?\d+>/g, "")
-      .trim();
 
-    // sample 5 examples from each legacy category
+    // Fetch last 6 messages (including this one) and build history
+    const fetched = await message.channel.messages.fetch({ limit: 6 });
+    const msgs = Array.from(fetched.values()).sort(
+      (a, b) => a.createdTimestamp - b.createdTimestamp
+    );
+    const history = msgs.slice(0, -1).map((m) => ({
+      role: m.author.id === client.user.id ? "assistant" : "user",
+      content: m.content,
+    }));
+
+    // Clean mention out of content
+    const userText = message.content.replace(/<@!?\d+>/g, "").trim();
+
+    // Sample 5 examples from each legacy category
     const examples = [
       ...sample(initialResponses, 5),
       ...sample(secondResponses, 5),
       ...sample(thirdResponses, 5),
     ];
 
+    // Generate AI reply with context history
     const aiReply = await generateReply("mention", userText, {
+      client,
+      history,
       examples,
       maxTokens: 150,
     });
-
     return message.reply(aiReply);
 
   } catch (err) {
@@ -185,7 +197,7 @@ module.exports = async function handleMention(client, message) {
       PermissionFlagsBits.ManagePermissions,
       PermissionFlagsBits.Administrator,
     ];
-    const hasMod = modFlags.some(flag =>
+    const hasMod = modFlags.some((flag) =>
       message.member.permissions.has(flag)
     );
 
