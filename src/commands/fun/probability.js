@@ -1,4 +1,4 @@
-const { PermissionFlagsBits } = require("discord.js");
+const { PermissionFlagsBits, MessageFlagsBits } = require("discord.js");
 
 module.exports = {
   name: "probability",

@@ -33,7 +33,7 @@ module.exports = {
     if (!channel) {
       return {
         content: "You need to specify a channel for welcoming new members.",
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       };
     }
 
@@ -43,12 +43,12 @@ module.exports = {
       await welcomeChannels.add(guild.id, channel.id);
       return {
         content: `The welcoming channel has been set to ${channel}.`,
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       };
     } catch (err) {
       return {
         content: `There was an error setting the welcoming channel. Error: \`${err}\``,
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       };
     }
   },

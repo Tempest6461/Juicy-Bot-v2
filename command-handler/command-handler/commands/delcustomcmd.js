@@ -1,4 +1,4 @@
-const { PermissionFlagsBits } = require("discord.js");
+const { PermissionFlagsBits, MessageFlagsBits } = require("discord.js");
 const CustomCommands = require("../CustomCommands");
 
 module.exports = {
@@ -60,7 +60,7 @@ module.exports = {
 
       await interaction.reply({
         content: responseMessage,
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       });
     } else if (action === "one" && commandName) {
       // Check if the command exists before attempting to delete
@@ -75,20 +75,20 @@ module.exports = {
 
         await interaction.reply({
           content: `The custom command "${commandName}" has been deleted.`,
-          ephemeral: true,
+          flags: MessageFlagsBits.Ephemeral,
         });
       } else {
         // Command does not exist
         await interaction.reply({
           content: `The custom command "${commandName}" does not exist.`,
-          ephemeral: true,
+          flags: MessageFlagsBits.Ephemeral,
         });
       }
     } else {
       // Invalid or missing command name
       await interaction.reply({
         content: "Invalid or missing command name.",
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       });
     }
   },

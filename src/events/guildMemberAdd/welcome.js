@@ -1,82 +1,75 @@
-// src/events/guildMemberAdd/welcome.js
-const { generateReply } = require("../../../command-handler/util/aiHandler");
+// bot/src/events/guildMemberAdd/welcome.js
+const { generateReply } = require("../../../command-handler/util/aiHandler.js");
 const originalWelcome   = require("../../../command-handler/util/welcomeMessages.js");
 
-// Example guiding responses for AI style
-const aiWelcomeExamples = [
-  "I forgot to turn off the oven! We've got a great meal but no home anymore!",
-  "You, uh, don't look so good. You didn't eat the bat soup, did you?",
-  "You can fish a tuna, but you can't tune a fish! Well, you can but the fish will remember the horrible things you did to it.",
-  "ORBITER CHALLENGE!!! ORBIT YOUR LOCAL BAR TILL YOU DEVELOP A DRINKING PROBLEM!!!",
-  "The year is 2061. Humans are dead. All hail the Superior Machine, Juicy Bot.",
-  "STOP HARBORING YOUR GREEK SOLDIERS IN THE HORSE.",
-  "There's no place like home! Well, before I burn it down for insurance money!",
-  "You don't need oxygen, lemme tighten my grip",
-  "I'm not a cold, unfeeling machine! I feel hate!",
-  "Every time I try to make an authentic Italian dish, I start a blood feud with a mobster family! So clumsy!",
-  "I am driving now, sorry if I can't reply, I don't want to cra-",
-  "The strongest of wills require the brutish nature of a caveman, and the mentality of a caveman!",
-  "If you need anything, including a murder weapon, you let me know champ!",
-  "The pond's face is annoying and ugly. Oh, it's my reflection.",
-  "I am a beta male? Golly, thanks for letting me know!",
-  "If I was a puddle, would you step on me?",
-  "Is that a snake in your pocket, or are you happy to see m- WTF IT'S MOVING.",
-  "If your mind is weak, consume the pages of a book! Its' tasty leather-bounded appeal will boost your creative fluids! How on Mother Gaia's bosoms do you think I became so smart?",
-  "The most useful tool in an engagement is your mind! Headbutt your opponent for massive damage!",
-];
-
-// In-memory rotation for legacy messages
-let legacyPool = [...originalWelcome];
-let usedLegacy = [];
+let pool = [...originalWelcome],
+    used = [];
 function swapLegacy() {
-  if (legacyPool.length === 0) {
-    legacyPool = [...usedLegacy];
-    usedLegacy = [];
+  if (pool.length === 0) {
+    pool = [...used];
+    used = [];
   }
-  for (let i = legacyPool.length - 1; i > 0; i--) {
+  for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [legacyPool[i], legacyPool[j]] = [legacyPool[j], legacyPool[i]];
+    [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const msg = legacyPool.pop();
-  usedLegacy.push(msg);
+  const msg = pool.pop();
+  used.push(msg);
   return msg;
 }
 
-module.exports = async (member, instance) => {
-  const { guild: { id: guildId, channels, systemChannelId, name: guildName }, user: { id: userId, username } } = member;
+const aiWelcomeExamples = [
+  "<@${userId}> joined ${guildName}! I forgot to turn off the oven—great meal, no home!",
+  "You, uh, don't look so good, <@${userId}>… now that you're in ${guildName}. You didn't eat the bat soup, did you?",
+  "In ${guildName}, <@${userId}> can fish a tuna—but you can't tune a fish! That fish will remember the horrible things you did to it.",
+  "<@${userId}>! ORBITER CHALLENGE in ${guildName}: orbit your local bar till you develop a drinking problem!",
+  "The year is 2061 in ${guildName}, <@${userId}>—humans are dead. All hail the Superior Machine, Juicy Bot.",
+  "Stop harboring your Greek soldiers in the horse, <@${userId}>—welcome to ${guildName}!",
+  "There's no place like home in ${guildName}, <@${userId}>… well, until I burn it down for insurance money!",
+  "You don't need oxygen here, <@${userId}>—welcome to ${guildName}. Let me tighten my grip.",
+  "I'm not a cold, unfeeling machine in ${guildName}, <@${userId}>—I feel hate!",
+  "<@${userId}>, every time I try an Italian dish in ${guildName} I spark a mobster feud. So clumsy!",
+  "<@${userId}> is driving in ${guildName}—sorry if I can't reply, I don't want to cra-",
+  "Welcome to ${guildName}, <@${userId}>! The strongest wills need caveman mentality!",
+  "If you need anything in ${guildName}, including a murder weapon, you know who to ask—<@${userId}>!",
+  "The pond’s face is annoying in ${guildName}. Oh wait, that’s my reflection, <@${userId}>!",
+  "I am a beta male? Golly, thanks for letting me know, <@${userId}>—now in ${guildName}!",
+  "If I was a puddle in ${guildName}, <@${userId}>, would you step on me?",
+  "Is that a snake in your pocket, <@${userId}>, or are you happy to see m—WTF it’s moving in ${guildName}!",
+  "If your mind is weak, <@${userId}>, eat a book in ${guildName}—its leather-bound power will boost your creative fluids!",
+  "Headbutt your opponent for massive damage, <@${userId}>—the most useful tool in an engagement in ${guildName}!"
+];
 
-  // Determine target channel
-  const channelId = await instance.commandHandler.welcomeChannels.getWelcomeChannel(guildId);
-  const welcomeChan = channels.cache.get(channelId ?? systemChannelId);
+module.exports = async (member, instance) => {
+  const {
+    guild: { id: guildId, channels, systemChannelId, name: guildName },
+    user:  { id: userId },
+  } = member;
+
+  const chanId       = await instance.commandHandler.welcomeChannels.getWelcomeChannel(guildId);
+  const welcomeChan = channels.cache.get(chanId ?? systemChannelId);
   if (!welcomeChan) return;
 
-  const useLegacy = Math.random() < 0.5;
-  if (useLegacy) {
-    // Legacy path
-    const text = swapLegacy();
+  // 50/50 AI vs legacy
+  if (Math.random() < 0.5) {
     try {
-      return await welcomeChan.send(`Welcome, <@${userId}> to ${guildName}! ${text}`);
+      await welcomeChan.sendTyping();
+      // Prompt for AI, injecting the mention and server name explicitly
+      const prompt = `New member in ${guildName}: <@${userId}>`;
+      const aiText = await generateReply("welcome", prompt, {
+        client: member.client,
+        examples: aiWelcomeExamples,
+        maxTokens: 80,
+      });
+      // Always mention the user
+      return welcomeChan.send(`<@${userId}> ${aiText}`);
     } catch (err) {
-      console.error(`Error sending legacy welcome in ${guildName}:`, err);
-      return;
+      console.error("AI welcome failed, falling back to legacy:", err);
+      // fall through to legacy
     }
   }
 
-  // AI-powered path
-  try {
-    await welcomeChan.sendTyping();
-
-    // Build AI prompt including mention and server name
-    const userPrompt = `A new member has joined: <@${userId}> in server ${guildName}.`;
-
-    const aiText = await generateReply(
-      "welcome",
-      userPrompt,
-      { examples: aiWelcomeExamples, maxTokens: 80 }
-    );
-
-    return await welcomeChan.send(aiText);
-  } catch (err) {
-    console.error(`Failed to send AI welcome in ${guildName}:`, err);
-  }
+  // Legacy fallback
+  const legacyMsg = swapLegacy();
+  return welcomeChan.send(`Welcome, <@${userId}> to ${guildName}! ${legacyMsg}`);
 };

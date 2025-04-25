@@ -54,7 +54,7 @@ module.exports = {
       return await stopMonitoring({ serverIP, channel });
     }
 
-    return { content: "Invalid action. Use either `start` or `stop`.", ephemeral: true };
+    return { content: "Invalid action. Use either `start` or `stop`.", flags: MessageFlagsBits.Ephemeral, };
   },
 };
 
@@ -88,7 +88,7 @@ async function startMonitoring({ serverIP, channel, client }) {
     return { content: `Monitoring started for server **${serverIP}** in <#${channel.id}>.` };
   } catch (error) {
     console.error("Error starting monitoring:", error);
-    return { content: "Failed to start monitoring. Please try again later.", ephemeral: true };
+    return { content: "Failed to start monitoring. Please try again later.", flags: MessageFlagsBits.Ephemeral, };
   }
 }
 
@@ -98,7 +98,7 @@ async function stopMonitoring({ serverIP, channel }) {
     let existingServer = await ServerStatus.findOne({ serverIP });
 
     if (!existingServer || !existingServer.isMonitoring) {
-      return { content: `Server **${serverIP}** is not currently being monitored.`, ephemeral: true };
+      return { content: `Server **${serverIP}** is not currently being monitored.`, flags: MessageFlagsBits.Ephemeral, };
     }
 
     // Remove the specified channel from the array
@@ -117,6 +117,6 @@ async function stopMonitoring({ serverIP, channel }) {
     return { content: `Monitoring stopped for server **${serverIP}** in <#${channel.id}>.` };
   } catch (error) {
     console.error("Error stopping monitoring:", error);
-    return { content: "Failed to stop monitoring. Please try again later.", ephemeral: true };
+    return { content: "Failed to stop monitoring. Please try again later.", flags: MessageFlagsBits.Ephemeral, };
   }
 }

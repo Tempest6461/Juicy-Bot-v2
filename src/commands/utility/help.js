@@ -1,5 +1,6 @@
 const {
   PermissionFlagsBits,
+  MessageFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
   EmbedBuilder,
@@ -254,7 +255,7 @@ module.exports = {
       .reply({
         embeds: [helpEmbed],
         components: [row],
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       })
       .then(() => wait(60000))
       .then(() => interaction.deleteReply());

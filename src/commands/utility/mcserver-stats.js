@@ -32,7 +32,7 @@ module.exports = {
       if (!response.ok) {
         return {
           content: `Failed to fetch server status. Status code: ${response.status}`,
-          ephemeral: true,
+          flags: MessageFlagsBits.Ephemeral,
         };
       }
 
@@ -40,7 +40,7 @@ module.exports = {
       if (!data.online) {
         return {
           content: "The server is offline or the IP is incorrect.",
-          ephemeral: true,
+          flags: MessageFlagsBits.Ephemeral,
         };
       }
 
@@ -78,7 +78,7 @@ module.exports = {
       console.error("Error fetching server status:", error); // Debug log
       return {
         content: "There was an error getting the server status. Please try again later.",
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       };
     }
   },

@@ -1,5 +1,6 @@
 const {
   PermissionFlagsBits,
+  MessageFlagsBits,
   MessageActionRow,
   MessageButton,
   MessageEmbed,
@@ -34,7 +35,7 @@ module.exports = {
       if (customCommands.length === 0) {
         return {
           content: "There are no custom commands in this server.",
-          ephemeral: true,
+          flags: MessageFlagsBits.Ephemeral,
         };
       }
 
@@ -47,13 +48,13 @@ module.exports = {
 
       return {
         content: `Custom Commands:\n${commandList}`,
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       };
     } catch (error) {
       console.error("Error fetching custom commands:", error);
       return {
         content: "An error occurred while fetching custom commands.",
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
       };
     }
   },

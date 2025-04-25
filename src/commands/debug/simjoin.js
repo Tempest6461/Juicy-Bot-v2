@@ -1,4 +1,4 @@
-const { PermissionFlagsBits } = require("discord.js");
+const { PermissionFlagsBits, MessageFlagsBits } = require("discord.js");
 
 module.exports = {
   category: "Testing",
@@ -24,7 +24,7 @@ module.exports = {
       client.emit("guildMemberAdd", message.member);
     }
     return {
-      ephemeral: true,
+      flags: MessageFlagsBits.Ephemeral,
       content: `Simulated a user joining the server.`,
     };
   },

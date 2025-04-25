@@ -1,4 +1,4 @@
-const { PermissionFlagsBits } = require("discord.js");
+const { PermissionFlagsBits, MessageFlagsBits } = require("discord.js");
 const wordBlacklist = require("../../../command-handler/util/wordBlacklist");
 
 module.exports = {
@@ -29,17 +29,17 @@ module.exports = {
 
     if (message.includes("@everyone") || message.includes("@here")) {
       return {
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
         content: "You can't use global pings.",
       };
     } else if (message.includes("@")) {
       return {
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
         content: "You cannot mention a user.",
       };
     } else if (foundInText) {
       return {
-        ephemeral: true,
+        flags: MessageFlagsBits.Ephemeral,
         content: "You cannot say that word.",
       };
     } else {
