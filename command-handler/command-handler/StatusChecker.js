@@ -14,7 +14,7 @@ async function checkServerStatus(client) {
     const url = `https://api.mcstatus.io/v2/status/java/${serverIP}`;
 
     try {
-      console.log(`Checking status for ${serverIP}...`);
+      // console.log(`Checking status for ${serverIP}...`);
       const response = await fetch(url);
       
       if (!response.ok) throw new Error(`API returned status: ${response.status}`);

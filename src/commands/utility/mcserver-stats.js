@@ -59,30 +59,6 @@ module.exports = {
           players + (data.players.list.length > 10 ? "\n- and more..." : "");
       }
 
-      // Get current time in UTC (adjusted for EST manually)
-      // const currentTime = new Date();
-      // const currentUTCTime = currentTime.getTime(); // UTC time in ms
-
-      // Calculate next restart times at 4 PM EST and 4 AM EST
-      // const nextRestartPM = new Date(currentTime);
-      // nextRestartPM.setUTCHours(21, 0, 0, 0); // 4 PM EST is 21:00 UTC
-      // const nextRestartAM = new Date(currentTime);
-      // nextRestartAM.setUTCHours(9, 0, 0, 0); // 4 AM EST is 9:00 UTC
-
-      // If current time is after 4 PM, choose the next 4 AM restart
-      // const nextRestart =
-        // currentTime.getHours() >= 21 || currentTime.getHours() < 9
-          // `?` nextRestartAM // Remove the backticks if reimplementation is needed
-          // : nextRestartPM;
-
-      // const countdown = Math.max(nextRestart.getTime() - currentUTCTime, 0);
-      // const countdownSeconds = Math.floor(countdown / 1000);
-      // const hours = Math.floor(countdownSeconds / 3600);
-      // const minutes = Math.floor((countdownSeconds % 3600) / 60);
-      // const seconds = countdownSeconds % 60;
-
-      // const restartCountdownMessage = `Next restart in: ${hours}h ${minutes}m ${seconds}s`;
-
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
         .setTitle("Minecraft Server Stats")
@@ -91,8 +67,7 @@ module.exports = {
           { name: "Server IP", value: `${serverIP}`, inline: true },
           { name: "Online Players", value: `${onlinePlayers}/${maxPlayers}`, inline: true },
           { name: "Version", value: version, inline: true },
-          { name: "Connected Players", value: connectedPlayersMessage, inline: false },
-          // { name: "Next Restart", value: restartCountdownMessage, inline: false }
+          { name: "Connected Players", value: connectedPlayersMessage, inline: false }
         )
         .setTimestamp();
 

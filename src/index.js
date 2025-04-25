@@ -11,6 +11,9 @@ const path = require("path");
 require("dotenv/config");
 require("./server");
 
+// import the mood decay function
+const { decayMood } = require("../command-handler/util/mood.js");
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -22,10 +25,19 @@ const client = new Client({
   partials: [Partials.Channel],
 });
 
+// ★ Initialize Juicy’s mood state ★
+client.juicyState = {
+  mood: "neutral",          // happy | neutral | salty | hyped
+  lastMoodChange: Date.now(),
+};
+
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 
   client.user.setActivity("with my code.", { type: ActivityType.PLAYING });
+
+  // ★ Every minute, drift Juicy’s mood back toward neutral ★
+  setInterval(() => decayMood(client), 60 * 1000);
 });
 
 (async () => {

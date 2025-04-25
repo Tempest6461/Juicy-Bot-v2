@@ -3,7 +3,7 @@ const path = require("path");
 const getAllFiles = require("../util/get-all-files");
 
 class EventHandler {
-  // <eventname, array of [function, dynamic validation of functions]>
+  // Map<eventName, Array<[handlerFunction, dynamicValidation?]>>
   _eventCallbacks = new Map();
 
   constructor(instance, events, client) {
@@ -11,9 +11,11 @@ class EventHandler {
     this._eventsDir = events?.dir;
     this._client = client;
 
+    // Remove the dir property and store remaining event settings
     delete events.dir;
     this._events = events;
 
+    // Built-in validations for core discord.js events
     this._builtInEvents = {
       interactionCreate: {
         isButton: (interaction) => interaction.isButton(),
@@ -66,28 +68,39 @@ class EventHandler {
   }
 
   registerEvents() {
-    const instance = this._instance;
-
+    // Register each event with try/catch around handlers
     for (const [eventName, functions] of this._eventCallbacks) {
       this._client.on(eventName, async (...args) => {
-        // console.log(`Event: ${eventName} triggered`);
         for (const [func, dynamicValidation] of functions) {
           if (dynamicValidation && !(await dynamicValidation(...args))) {
             continue;
           }
-          // console.log(`Executing function for event ${eventName}`);
-          func(...args, instance);
+          try {
+            await func(...args, this._instance);
+          } catch (err) {
+            console.error(`Error in ${eventName} handler:`, err);
+          }
         }
       });
     }
 
+    // Special case for @mentions handler
     const handleMentionFunc = require("../../src/events/messageCreate/mentioned");
     const dynamicValidation = (message) => !message.author.bot;
     this._client.on("messageCreate", async (message) => {
       if (dynamicValidation && !(await dynamicValidation(message))) {
         return;
       }
-      handleMentionFunc(this._client, message);
+      try {
+        handleMentionFunc(this._client, message);
+      } catch (err) {
+        console.error("Error in messageCreate mention handler:", err);
+      }
+    });
+
+    // Catch any unhandled client errors to prevent process crash
+    this._client.on("error", (err) => {
+      console.error("Discord client error:", err);
     });
   }
 }

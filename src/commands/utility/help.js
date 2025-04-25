@@ -106,6 +106,11 @@ module.exports = {
           inline: true,
         },
         {
+          name: "dice",
+          value: "`Roll a 6 or 20 sided die.`",
+          inline: true,
+        },
+        {
           name: "coinflip",
           value: "`Flip a coin.`",
           inline: true,
@@ -138,11 +143,6 @@ module.exports = {
           inline: true,
         },
         {
-          name: "welcomesetup",
-          value: "`Setup the welcome channel.`",
-          inline: true,
-        },
-        {
           name: "prefix",
           value: "`Change the bots prefix.`",
           inline: true,
@@ -163,19 +163,24 @@ module.exports = {
           inline: true,
         },
         {
-          name: "uptime",
-          value: "`Check the uptime of the bot.`",
+          name: "reminder",
+          value: "`Set a reminder.`",
           inline: true,
         },
         {
-          name: "reminder",
-          value: "`Set a reminder.`",
+          name: "mcserver-stats",
+          value: "`Get the stats for a Minecraft server.`",
+          inline: true,
+        },
+        {
+          name: "mc-alerts",
+          value: "`Toggle alerts for a Minecraft server.`",
           inline: true,
         }
       );
 
     const testingEmbed = new EmbedBuilder()
-      .setTitle("🧪 Testing")
+      .setTitle("🧪 Debug")
       .setDescription("`Testing Commands.`")
       .setColor("Yellow")
       .addFields(
@@ -188,7 +193,17 @@ module.exports = {
           name: "simjoin",
           value: "`Simulates a user joining the server.`",
           inline: true,
-        }
+        },
+        {
+          name: "uptime",
+          value: "`Check the uptime of the bot.`",
+          inline: true,
+        },
+        {
+          name: "welcomesetup",
+          value: "`Setup the welcome channel.`",
+          inline: true,
+        },
         // {
         //   name: "requiredrole",
         //   value: "`Set a required role for a command.`",
