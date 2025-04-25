@@ -1,4 +1,3 @@
-// command-handler/command-handler/SchizoCounter.js
 const NicknameChange = require("../models/nickname-change-schema");
 
 class SchizoCounterHandler {

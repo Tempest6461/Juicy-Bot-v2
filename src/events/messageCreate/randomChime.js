@@ -10,6 +10,8 @@ module.exports = async function randomChime(message) {
     message.mentions.has(message.client.user)
   ) return;
 
+  if (Math.random() > 0.1) return; // 10% chance to trigger
+
   try {
     await message.channel.sendTyping();
 
