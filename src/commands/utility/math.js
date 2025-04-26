@@ -27,7 +27,7 @@ module.exports = {
     } catch (err) {
       return {
         content: "Sorry, I can't solve that.",
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
       };
     }
 

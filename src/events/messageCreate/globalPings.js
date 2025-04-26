@@ -1,74 +1,85 @@
-const { PermissionFlagsBits, MessageFlagsBits } = require('discord.js');
+// src/events/messageCreate/globalPings.js
+const { PermissionFlagsBits } = require('discord.js');
 
 const recentAttempts = new Map();
-const pingAttempts = new Map();
+const pingAttempts   = new Map();
 
-module.exports = (message) => {
-    // Ignore DMs or missing guild member
-    if (!message.guild || !message.member) return;
+module.exports = async (message) => {
+  // 1) Ignore DMs, bots, or if no guild/member
+  if (!message.guild || !message.member || message.author.bot) return;
 
-    // Check if the user has the administrator permission
-    if (message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-        return;
+  // 2) Admins can always ping
+  if (message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return;
+  }
+
+  // 3) Only care about @here or @everyone
+  if (!message.content.includes('@here') && !message.content.includes('@everyone')) {
+    return;
+  }
+
+  const authorId      = message.author.id;
+  const channel       = message.channel;
+  const now           = Date.now();
+  const lastPingTime  = recentAttempts.get(authorId) || 0;
+  const userData      = pingAttempts.get(authorId) || { count: 0, timestamp: now };
+
+  // If within 60s window, increment count; otherwise reset
+  if (now - lastPingTime < 60_000) {
+    userData.count++;
+  } else {
+    userData.count     = 1;
+    recentAttempts.set(authorId, now);
+    // Reset that count after 60s
+    setTimeout(() => {
+      recentAttempts.delete(authorId);
+      pingAttempts.set(authorId, { count: 0, timestamp: 0 });
+    }, 60_000);
+  }
+  pingAttempts.set(authorId, userData);
+
+  // 4) Build the warning text based on count
+  let warning;
+  switch (true) {
+    case userData.count >= 6:
+      warning = "How many times do I have to tell you? Go sit in the corner and think about what you've done."; 
+      break;
+    case userData.count >= 5:
+      warning = "This is your last warning. I will not tolerate this behavior.";
+      break;
+    case userData.count >= 4:
+      warning = "Are you trying to get banned? Because this is how you get banned.";
+      break;
+    case userData.count >= 3:
+      warning = "You know, I have a lot of patience, but this is pushing it.";
+      break;
+    case userData.count >= 2:
+      warning = "You do not have permission to use global pings. I just said that.";
+      break;
+    default:
+      warning = "Sorry, you're not allowed to use global pings.";
+  }
+
+  // 5) Delete the original pinging message
+  try {
+    await message.delete();
+  } catch (err) {
+    console.error("globalPings: could not delete message:", err);
+  }
+
+  // 6) Send a fresh warning in the channel, mentioning the user
+  try {
+    await channel.send(`<@${authorId}> ${warning}`);
+  } catch (err) {
+    console.error("globalPings: could not send warning:", err);
+  }
+
+  // 7) If they’re on attempt 6+, also time them out
+  if (userData.count >= 6) {
+    try {
+      await message.member.timeout(60 * 1000, "Abuse of global pings");
+    } catch (err) {
+      console.error("globalPings: timeout failed:", err);
     }
-
-    // Check if the message contains "@here" or "@everyone"
-    if (message.content.includes('@here') || message.content.includes('@everyone')) {
-        const authorId = message.author.id;
-        const currentTime = Date.now();
-        const previousPingTime = recentAttempts.get(authorId);
-
-        // Initialize count for the user if not present
-        if (!pingAttempts.has(authorId)) {
-            pingAttempts.set(authorId, { count: 1, timestamp: currentTime });
-        }
-
-        const userData = pingAttempts.get(authorId);
-        let pingCount = userData.count;
-
-        if (previousPingTime && currentTime - previousPingTime < 60000) {
-            userData.count++;
-
-            if (pingCount >= 1) {
-                message.delete();
-                message.reply("Sorry, you are unable to use global pings. This is to prevent spam and abuse.");
-
-            } else if (pingCount >= 2) {
-                message.delete();
-                message.reply("You don't have the power to use global pings.");
-
-            } else if (pingCount >= 3) {
-                message.delete();
-                message.reply("What did I just say?");
-
-            } else if (pingCount >= 4) {
-                message.delete();
-                message.reply("You're really trying my patience.");
-
-            } else if (pingCount >= 5) {
-                message.delete();
-                message.reply("This is literally the definition of insanity.");
-
-            } else if (pingCount >= 6) {
-                message.delete();
-                message.reply("You're going to get yourself banned, go sit in the corner.");
-
-                try {
-                    message.member.timeout(60 * 1000, "You basically asked for it. You've been timed out for 60 seconds");
-                } catch (error) {
-                    console.error("Error timing out user:", error);
-                }
-            }
-        } else {
-            recentAttempts.set(authorId, currentTime);
-
-            setTimeout(() => {
-                recentAttempts.delete(authorId);
-                userData.count = 0; // Reset count after 60 seconds
-            }, 60000);
-        }
-
-        // Update the count in the map
-        pingAttempts.set(authorId, userData);
-    }
+  }
 };

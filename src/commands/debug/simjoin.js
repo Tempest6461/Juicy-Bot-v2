@@ -24,7 +24,7 @@ module.exports = {
       client.emit("guildMemberAdd", message.member);
     }
     return {
-      flags: MessageFlagsBits.Ephemeral,
+      ephemeral: true,
       content: `Simulated a user joining the server.`,
     };
   },

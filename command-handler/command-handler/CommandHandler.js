@@ -4,9 +4,7 @@ const getAllFiles = require("../util/get-all-files");
 const Command = require("./Command");
 const SlashCommands = require("./SlashCommands");
 const { cooldownTypes } = require("../util/Cooldowns");
-const ChannelCommands = require("./ChannelCommands");
 const CustomCommands = require("./CustomCommands");
-const DisabledCommands = require("./DisabledCommands");
 const PrefixHandler = require("./PrefixHandler");
 const WelcomeChannels = require("./WelcomeChannels");
 const SchizoCounter = require("./SchizoCounter");
@@ -17,9 +15,7 @@ class CommandHandler {
   _validations = this.getValidations(
     path.join(__dirname, "validations", "runtime")
   );
-  _channelCommands = new ChannelCommands();
   _customCommands = new CustomCommands(this);
-  _disabledCommands = new DisabledCommands();
   _prefixes = new PrefixHandler();
   _welcomeChannels = new WelcomeChannels();
   _schizoCounter = new SchizoCounter();
@@ -42,20 +38,12 @@ class CommandHandler {
     return this._commands;
   }
 
-  get channelCommands() {
-    return this._channelCommands;
-  }
-
   get slashCommands() {
     return this._slashCommands;
   }
 
   get customCommands() {
     return this._customCommands;
-  }
-
-  get disabledCommands() {
-    return this._disabledCommands;
   }
 
   get prefixHandler() {
@@ -76,72 +64,51 @@ class CommandHandler {
 
   async readFiles() {
     const defaultCommands = getAllFiles(path.join(__dirname, "./commands"));
-    const files = getAllFiles(this._commandsDir);
+    const files           = getAllFiles(this._commandsDir);
     const validations = [
       ...this.getValidations(path.join(__dirname, "validations", "syntax")),
       ...this.getValidations(this._instance.validations?.syntax),
     ];
 
-    // console.log("Default commands path:", path.join(__dirname, "./commands"));
-    // console.log("Command directory path:", this._commandsDir);
-
+    // Load every command file (built-in + custom)
     for (let file of [...defaultCommands, ...files]) {
       const commandObject = require(file);
 
-      let commandName = file.split(/[\/\\]/);
-      commandName = commandName.pop();
-      commandName = commandName.split(".")[0];
+      // Derive commandName from filename
+      let commandName = file.split(/[\/\\]/).pop().split(".")[0];
+      const command    = new Command(this._instance, commandName, commandObject);
 
-      const command = new Command(this._instance, commandName, commandObject);
-
+      // Extract the bits we need (no more `delete` or disabledDefaultCommands)
       const {
         description,
         type,
         testOnly,
-        delete: del,
         aliases = [],
         init = () => {},
       } = commandObject;
-      // console.log(commandObject)
-      if (
-        del ||
-        this._instance.disabledDefaultCommands.includes(
-          commandName.toLowerCase()
-        )
-      ) {
-        if (type === "SLASH" || type === "BOTH") {
-          if (testOnly) {
-            for (const guildId of this._instance.testServers) {
-              await this._slashCommands.delete(command.commandName, guildId);
-            }
-          } else {
-            await this._slashCommands.delete(command.commandName);
-          } // console.log("Deleted command: " + command.commandName)
-        }
 
-        continue;
-      }
-
+      // Run any validations
       for (const validation of validations) {
         validation(command);
       }
 
+      // Call the command’s init (e.g. event-handlers, etc.)
       await init(this._client, this._instance);
 
+      // Register it in our in-memory Map under each name & alias
       const names = [command.commandName, ...aliases];
-
       for (const name of names) {
         this._commands.set(name, command);
       }
 
+      // If it’s a slash-type command, register with Discord
       if (type === "SLASH" || type === "BOTH") {
-        const options =
-          commandObject.options ||
-          this._slashCommands.createOptions(commandObject);
+        const options = commandObject.options
+          || this._slashCommands.createOptions(commandObject);
 
         if (testOnly) {
           for (const guildId of this._instance.testServers) {
-            this._slashCommands.create(
+            await this._slashCommands.create(
               command.commandName,
               description,
               options,
@@ -149,10 +116,52 @@ class CommandHandler {
             );
           }
         } else {
-          this._slashCommands.create(command.commandName, description, options);
+          await this._slashCommands.create(
+            command.commandName,
+            description,
+            options
+          );
         }
       }
     }
+
+    // === bulk‐prune stale slash commands ===
+
+    // Build sets of the names you just registered
+    const globalSlashCommands = new Set();
+    const guildSlashCommands = new Set();
+
+    for (const [, command] of this._commands) {
+      const { type, testOnly } = command.commandObject;
+      if (type === "SLASH" || type === "BOTH") {
+        if (testOnly) guildSlashCommands.add(command.commandName);
+        else globalSlashCommands.add(command.commandName);
+      }
+    }
+
+    // 1) Prune GLOBAL commands
+    const existingGlobal = await this._slashCommands.getCommands(); // no guildId = global
+    for (const cmd of existingGlobal.cache.values()) {
+      if (!globalSlashCommands.has(cmd.name)) {
+        console.log(`⛔ Pruning global slash command ${cmd.name}`);
+        await this._slashCommands.delete(cmd.name);
+      }
+    }
+
+    // 2) Prune GUILD (test) commands
+    for (const guildId of this._instance.testServers) {
+      const existingGuild = await this._slashCommands.getCommands(guildId);
+      for (const cmd of existingGuild.cache.values()) {
+        if (!guildSlashCommands.has(cmd.name)) {
+          console.log(
+            `⛔ Pruning guild (${guildId}) slash command ${cmd.name}`
+          );
+          await this._slashCommands.delete(cmd.name, guildId);
+        }
+      }
+    }
+
+    // === end bulk‐prune ===
   }
 
   async runCommand(command, args, message, interaction) {

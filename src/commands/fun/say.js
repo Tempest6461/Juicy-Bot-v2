@@ -29,17 +29,17 @@ module.exports = {
 
     if (message.includes("@everyone") || message.includes("@here")) {
       return {
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
         content: "You can't use global pings.",
       };
     } else if (message.includes("@")) {
       return {
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
         content: "You cannot mention a user.",
       };
     } else if (foundInText) {
       return {
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
         content: "You cannot say that word.",
       };
     } else {

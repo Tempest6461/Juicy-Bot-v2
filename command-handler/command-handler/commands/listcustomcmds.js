@@ -35,7 +35,7 @@ module.exports = {
       if (customCommands.length === 0) {
         return {
           content: "There are no custom commands in this server.",
-          flags: MessageFlagsBits.Ephemeral,
+          ephemeral: true,
         };
       }
 
@@ -48,13 +48,13 @@ module.exports = {
 
       return {
         content: `Custom Commands:\n${commandList}`,
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
       };
     } catch (error) {
       console.error("Error fetching custom commands:", error);
       return {
         content: "An error occurred while fetching custom commands.",
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
       };
     }
   },

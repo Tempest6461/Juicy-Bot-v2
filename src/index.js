@@ -59,12 +59,7 @@ client.on("ready", () => {
       botOwnerBypass: true,
       dbRequired: 300, // 5 minutes
     },
-    disabledDefaultCommands: [
-      "requiredroles",
-      "requiredpermissions",
-      "channelcommand",
-      "togglecommand",
-    ],
+
     events: {
       dir: path.join(__dirname, "events"),
       interactionCreate: {

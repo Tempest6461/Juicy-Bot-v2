@@ -1,4 +1,4 @@
-// src/commands/welcomeSetup.js
+// src/commands/utility/welcomeSetup.js
 const {
   ApplicationCommandOptionType,
   PermissionFlagsBits,
@@ -7,12 +7,12 @@ const {
 module.exports = {
   name: "welcomesetup",
   category: "Utility",
-  description: "Setup the welcoming channel for your server.",
+  description: "Setup the welcoming channel for your server!",
 
   expectedArgs: "<channel>",
 
   type: "SLASH",
-  testOnly: false,
+  testOnly: true,
   guildOnly: true,
   cooldowns: {
     perUserPerGuild: "1 m",
@@ -30,7 +30,7 @@ module.exports = {
   ],
 
   callback: async ({ instance, guild, interaction }) => {
-    // Acknowledge the interaction to avoid the "application did not respond" error
+    // Acknowledge with flags instead of deprecated `ephemeral: true`
     await interaction.deferReply({ ephemeral: true });
 
     const channel = interaction.options.getChannel("channel");

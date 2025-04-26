@@ -204,27 +204,7 @@ module.exports = {
           name: "welcomesetup",
           value: "`Setup the welcome channel.`",
           inline: true,
-        },
-        // {
-        //   name: "requiredrole",
-        //   value: "`Set a required role for a command.`",
-        //   inline: true,
-        // },
-        // {
-        //   name: "requiredpermissions",
-        //   value: "`Sets what commands require what permissions.`",
-        //   inline: true,
-        // },
-        // {
-        //   name: "channelcommands",
-        //   value: "`Sets what channels a command can be used in.`",
-        //   inline: true,
-        // },
-        // {
-        //   name: "togglecommand",
-        //   value: "`Toggles a command on or off for your guild.`",
-        //   inline: true,
-        // },
+        }
       );
 
     const helpMenuSelect = async () => {
@@ -255,7 +235,7 @@ module.exports = {
       .reply({
         embeds: [helpEmbed],
         components: [row],
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
       })
       .then(() => wait(60000))
       .then(() => interaction.deleteReply());

@@ -9,6 +9,7 @@ module.exports = {
   type: "BOTH",
   guildOnly: true,
   testOnly: false,
+  
 
   aliases: [ "dcc" ],
 
@@ -60,7 +61,7 @@ module.exports = {
 
       await interaction.reply({
         content: responseMessage,
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
       });
     } else if (action === "one" && commandName) {
       // Check if the command exists before attempting to delete
@@ -75,20 +76,20 @@ module.exports = {
 
         await interaction.reply({
           content: `The custom command "${commandName}" has been deleted.`,
-          flags: MessageFlagsBits.Ephemeral,
+          ephemeral: true,
         });
       } else {
         // Command does not exist
         await interaction.reply({
           content: `The custom command "${commandName}" does not exist.`,
-          flags: MessageFlagsBits.Ephemeral,
+          ephemeral: true,
         });
       }
     } else {
       // Invalid or missing command name
       await interaction.reply({
         content: "Invalid or missing command name.",
-        flags: MessageFlagsBits.Ephemeral,
+        ephemeral: true,
       });
     }
   },

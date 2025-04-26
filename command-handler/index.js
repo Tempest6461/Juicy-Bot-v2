@@ -17,7 +17,6 @@ class Main {
     testServers = [],
     botOwners = [],
     cooldownConfig = {},
-    disabledDefaultCommands = [],
     events = {},
     validations = {},
   }) {
@@ -31,9 +30,6 @@ class Main {
       instance: this,
       ...cooldownConfig,
     });
-    this._disabledDefaultCommands = disabledDefaultCommands.map((cmd) =>
-      cmd.toLowerCase()
-    );
     this._validations = validations;
 
     if (mongoUri) {
@@ -61,10 +57,6 @@ class Main {
 
   get cooldowns() {
     return this._cooldowns;
-  }
-
-  get disabledDefaultCommands() {
-    return this._disabledDefaultCommands;
   }
 
   get commandHandler() {

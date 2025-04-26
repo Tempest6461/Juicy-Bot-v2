@@ -31,7 +31,7 @@ module.exports = {
 
     return {
       content: `Custom command "${commandName}" has been created!`,
-      flags: MessageFlagsBits.Ephemeral,
+      ephemeral: true,
     };
   },
 };
