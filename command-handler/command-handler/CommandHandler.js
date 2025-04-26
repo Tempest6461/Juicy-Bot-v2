@@ -1,5 +1,5 @@
+// src/command-handler/command-handler/CommandHandler.js
 const path = require("path");
-
 const getAllFiles = require("../util/get-all-files");
 const Command = require("./Command");
 const SlashCommands = require("./SlashCommands");
@@ -37,23 +37,18 @@ class CommandHandler {
   get commands() {
     return this._commands;
   }
-
   get slashCommands() {
     return this._slashCommands;
   }
-
   get customCommands() {
     return this._customCommands;
   }
-
   get prefixHandler() {
     return this._prefixes;
   }
-
   get welcomeChannels() {
     return this._welcomeChannels;
   }
-
   get schizoCounter() {
     return this._schizoCounter;
   }
@@ -70,47 +65,39 @@ class CommandHandler {
       ...this.getValidations(this._instance.validations?.syntax),
     ];
 
-    // Load every command file (built-in + custom)
+    // Load built-in + custom command files
     for (let file of [...defaultCommands, ...files]) {
       const commandObject = require(file);
-
-      // Derive commandName from filename
-      let commandName = file
-        .split(/[\/\\]/)
-        .pop()
-        .split(".")[0];
+      let commandName = file.split(/[\/\\]/).pop().split(".")[0];
       const command = new Command(this._instance, commandName, commandObject);
 
-      // Extract the bits we need (no more `delete` or disabledDefaultCommands)
       const {
         description,
         type,
         testOnly,
+        guildOnly,
         aliases = [],
         init = () => {},
       } = commandObject;
 
-      // Run any validations
-      for (const validation of validations) {
-        validation(command);
-      }
-
-      // Call the command’s init (e.g. event-handlers, etc.)
+      // Run validations & init
+      for (const validation of validations) validation(command);
       await init(this._client, this._instance);
 
-      // Register it in our in-memory Map under each name & alias
+      // Register in-memory
       const names = [command.commandName, ...aliases];
       for (const name of names) {
         this._commands.set(name, command);
       }
 
-      // If it’s a slash-type command, register with Discord
+      // Slash‐command registration
       if (type === "SLASH" || type === "BOTH") {
         const options =
           commandObject.options ||
           this._slashCommands.createOptions(commandObject);
 
         if (testOnly) {
+          // 1) Test‐only → single test guild
           for (const guildId of this._instance.testServers) {
             await this._slashCommands.create(
               command.commandName,
@@ -119,71 +106,55 @@ class CommandHandler {
               guildId
             );
           }
-        } else {
-          await this._slashCommands.create(
-            command.commandName,
-            description,
-            options
-          );
+        } else if (guildOnly) {
+          // 2) Guild‐only → _every_ guild the bot is in
+          for (const [guildId] of this._client.guilds.cache) {
+            await this._slashCommands.create(
+              command.commandName,
+              description,
+              options,
+              guildId
+            );
+          }
         }
+        // 3) Global commands are handled by bulk‐overwrite below
       }
     }
 
-    // === bulk‐prune stale slash commands ===
-    const globalSlashCommands = new Set();
-    const guildSlashCommands = new Set();
-
-    // Build sets of the names you just registered
+    // === bulk‐overwrite global slash commands ===
+    const globalDefs = [];
     for (const [, command] of this._commands) {
-      const { type, testOnly } = command.commandObject;
-      if (type === "SLASH" || type === "BOTH") {
-        if (testOnly) guildSlashCommands.add(command.commandName);
-        else globalSlashCommands.add(command.commandName);
+      const { type, testOnly, guildOnly, description, options } =
+        command.commandObject;
+      if (
+        (type === "SLASH" || type === "BOTH") &&
+        !testOnly &&
+        !guildOnly
+      ) {
+        globalDefs.push({
+          name: command.commandName,
+          description,
+          options:
+            options || this._slashCommands.createOptions(command.commandObject),
+        });
       }
     }
 
-    // 1) Prune GLOBAL commands
-    const existingGlobal = await this._slashCommands.getCommands();
-    if (existingGlobal) {
-      for (const cmd of existingGlobal.cache.values()) {
-        if (!globalSlashCommands.has(cmd.name)) {
-          console.log(`⛔ Pruning global slash command ${cmd.name}`);
-          await this._slashCommands.delete(cmd.name);
-        }
-      }
-    } else {
-      console.warn(
-        "[SlashCommands] Skipping global prune: manager unavailable"
-      );
+    try {
+      console.log("🔄 Bulk-syncing global slash commands...");
+      await this._client.application.commands.set(globalDefs);
+      console.log("✅ Global slash commands synchronized");
+    } catch (err) {
+      console.error("❌ Failed bulk-sync global slash commands:", err);
     }
-
-    // 2) Prune GUILD (test) commands
-    for (const guildId of this._instance.testServers) {
-      const existingGuild = await this._slashCommands.getCommands(guildId);
-      if (!existingGuild) {
-        console.warn(
-          `[SlashCommands] Skipping prune for unknown or unavailable guild ${guildId}`
-        );
-        continue;
-      }
-      for (const cmd of existingGuild.cache.values()) {
-        if (!guildSlashCommands.has(cmd.name)) {
-          console.log(
-            `⛔ Pruning guild (${guildId}) slash command ${cmd.name}`
-          );
-          await this._slashCommands.delete(cmd.name, guildId);
-        }
-      }
-    }
-    // === end bulk‐prune ===
+    // === end bulk‐overwrite ===
   }
 
   async runCommand(command, args, message, interaction) {
     const { callback, type, cooldowns } = command.commandObject;
 
-    if (message && type === "SLASH") {
-      return;
-    }
+    // don't run SLASH commands in message context
+    if (message && type === "SLASH") return;
 
     const guild = message ? message.guild : interaction.guild;
     const member = message ? message.member : interaction.member;
@@ -203,22 +174,22 @@ class CommandHandler {
       client: this._client,
     };
 
+    // runtime validations
     for (const validation of this._validations) {
       if (!(await validation(command, usage, this._prefixes.get(guild?.id)))) {
         return;
       }
     }
 
+    // cooldown handling
     if (cooldowns) {
       let cooldownType;
-
-      for (const type of cooldownTypes) {
-        if (cooldowns[type]) {
-          cooldownType = type;
+      for (const t of cooldownTypes) {
+        if (cooldowns[t]) {
+          cooldownType = t;
           break;
         }
       }
-
       const cooldownUsage = {
         cooldownType,
         userId: user.id,
@@ -227,19 +198,12 @@ class CommandHandler {
         duration: cooldowns[cooldownType],
         errorMessage: cooldowns.errorMessage,
       };
-
       const result = this._instance.cooldowns.canRunAction(cooldownUsage);
-
-      if (typeof result === "string") {
-        return result;
-      }
-
+      if (typeof result === "string") return result;
       await this._instance.cooldowns.start(cooldownUsage);
-
       usage.cancelCooldown = () => {
         this._instance.cooldowns.cancelCooldown(cooldownUsage);
       };
-
       usage.updateCooldown = (expires) => {
         this._instance.cooldowns.updateCooldown(cooldownUsage, expires);
       };
@@ -249,15 +213,8 @@ class CommandHandler {
   }
 
   getValidations(folder) {
-    if (!folder) {
-      return [];
-    }
-    // console.log(folder);
-    const validations = getAllFiles(folder).map((filePath) =>
-      require(filePath)
-    );
-
-    return validations;
+    if (!folder) return [];
+    return getAllFiles(folder).map((filePath) => require(filePath));
   }
 }
 

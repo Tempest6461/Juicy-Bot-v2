@@ -1,15 +1,21 @@
-const { PermissionFlagsBits, MessageFlagsBits } = require("discord.js");
-const { MessageEmbed } = require("discord.js");
+// src/commands/utility/reminder.js
+const {
+  PermissionFlagsBits,
+  MessageFlagsBits,
+  EmbedBuilder,
+} = require("discord.js");
+const Reminder = require("../../../command-handler/models/reminder-schema.js");
+const { options } = require("./welcomeSetup.js");
 
 module.exports = {
   name: "reminder",
   category: "Utility",
   description: "Set a reminder for yourself.",
 
-  minArgs: 1,
-  maxArgs: 2,
+  minArgs: 2,
   expectedArgs: "<Time> <Reminder>",
-  correctSyntax: "Correct syntax: {PREFIX}reminder <Time (e.g. 1h or 30m or 1h30m)> <Reminder>",
+  correctSyntax:
+    "Correct syntax: {PREFIX}reminder <Time (e.g. 1h or 30m or 1h30m)> <Reminder>",
 
   type: "BOTH",
   testOnly: false,
@@ -20,81 +26,119 @@ module.exports = {
     perUserPerGuild: "1 m",
   },
 
+  options: [
+    {
+      name: "time",
+      description: "Time until the reminder (e.g. 1h, 30m, 1h30m)",
+      type: 3,
+      required: true,
+    },
+    {
+      name: "reminder",
+      description: "The reminder text",
+      type: 3,
+      required: true,
+    },
+  ],
+
   permissions: [PermissionFlagsBits.SendMessages],
 
-  callback: ({ message, args }) => {
-    const time = args[0];
-    const reminder = args.slice(1).join(" ");
+  callback: async ({ message, interaction, args, guild, channel, user }) => {
+    // Defer immediately if slash
+    if (interaction) await interaction.deferReply({ ephemeral: true });
 
-    if (!time) {
-      return {
-        reply: "Please specify a time for your reminder.",
+    // 1) Parse & validate input
+    const timeArg = args[0];
+    const reminderText = args.slice(1).join(" ");
+    if (!timeArg || !reminderText) {
+      const missing = !timeArg
+        ? "Please specify a time."
+        : "Please specify a reminder text.";
+      const reply = { content: missing };
+      if (interaction) reply.flags = MessageFlagsBits.Ephemeral;
+      return reply;
+    }
+
+    // 2) Convert "1h30m" into milliseconds
+    let ms = 0, parts = [];
+    const hMatch = timeArg.match(/(\d+)h/);
+    const mMatch = timeArg.match(/(\d+)m/);
+    if (hMatch) {
+      const h = parseInt(hMatch[1], 10);
+      if (isNaN(h) || h < 1) {
+        const reply = { content: "Invalid hours value (>0)." };
+        if (interaction) reply.flags = MessageFlagsBits.Ephemeral;
+        return reply;
+      }
+      ms += h * 3600000;
+      parts.push(`${h}h`);
+    }
+    if (mMatch) {
+      const m = parseInt(mMatch[1], 10);
+      if (isNaN(m) || m < 1) {
+        const reply = { content: "Invalid minutes value (>0)." };
+        if (interaction) reply.flags = MessageFlagsBits.Ephemeral;
+        return reply;
+      }
+      ms += m * 60000;
+      parts.push(`${m}m`);
+    }
+    if (parts.length === 0) {
+      const reply = {
+        content: "Invalid time format. Use e.g. `1h`, `30m`, or `1h30m`.",
       };
+      if (interaction) reply.flags = MessageFlagsBits.Ephemeral;
+      return reply;
     }
 
-    if (!reminder) {
-      return {
-        reply: "Please specify a reminder.",
+    const displayText = parts.join(" ");
+    const remindAt = new Date(Date.now() + ms);
+
+    // 3) Save to MongoDB
+    try {
+      await Reminder.create({
+        userId:    user.id,
+        guildId:   guild.id,
+        channelId: channel.id,
+        remindAt,
+        content:   reminderText,
+      });
+    } catch (err) {
+      console.error("❌ reminder DB save failed:", err);
+      const reply = {
+        content: `Could not save reminder: ${err.message}`,
       };
+      if (interaction) reply.flags = MessageFlagsBits.Ephemeral;
+      return reply;
     }
 
-    let timeInMs = 0;
-    let timeText = "";
+    // 4) Schedule the actual reminder
+    setTimeout(async () => {
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle("🔔 Reminder")
+        .setDescription(reminderText);
 
-    const hoursMatch = time.match(/(\d+)h/);
-    const minutesMatch = time.match(/(\d+)m/);
+      try {
+        if (interaction) {
+          await interaction.followUp({
+            embeds: [embed],
+            ephemeral: true,
+          });
+        } else {
+          await message.reply({ embeds: [embed] });
+        }
+      } catch (err) {
+        console.error("❌ reminder follow-up failed:", err);
+      }
+    }, ms);
 
-    if (hoursMatch) {
-      const hours = parseInt(hoursMatch[1]);
-      if (isNaN(hours)) {
-        return {
-          reply: "Please specify a valid time.",
-        };
-      }
-      if (hours < 1) {
-        return {
-          reply: "Please specify a time greater than 0.",
-        };
-      }
-      timeInMs += hours * 60 * 60 * 1000;
-      timeText += `${hours} hour(s) `;
+    // 5) Immediate confirmation
+    const confirm = { content: `Got it! I'll remind you in ${displayText}.` };
+    if (interaction) {
+      return interaction.editReply(confirm);
+    } else {
+      return confirm;
     }
-
-    if (minutesMatch) {
-      const minutes = parseInt(minutesMatch[1]);
-      if (isNaN(minutes)) {
-        return {
-          reply: "Please specify a valid time.",
-        };
-      }
-      if (minutes < 1) {
-        return {
-          reply: "Please specify a time greater than 0.",
-        };
-      }
-      timeInMs += minutes * 60 * 1000;
-      timeText += `${minutes} minute(s) `;
-    }
-
-    if (!hoursMatch && !minutesMatch) {
-      return {
-        reply: "Please specify a valid time format (e.g. 1h or 30m or 1h30m).",
-      };
-    }
-
-    setTimeout(() => {
-      const reminderEmbed = new MessageEmbed()
-        .setColor("#FF0000")
-        .setTitle("You have a reminder")
-        .setDescription(`${reminder}`);
-
-      message.reply(reminderEmbed);
-    }, timeInMs);
-
-    let replyMessage = `I will remind you in ${timeText.trim()}.`;
-
-    return {
-      content: replyMessage,
-    };
   },
 };
