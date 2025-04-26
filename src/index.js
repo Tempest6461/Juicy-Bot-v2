@@ -9,7 +9,6 @@ const welcome = require("./events/guildMemberAdd/welcome.js");
 const goodbye = require("./events/guildMemberRemove/goodbye.js");
 const path = require("path");
 require("dotenv/config");
-require("./server");
 
 // import the mood decay function
 const { decayMood } = require("../command-handler/util/mood.js");
