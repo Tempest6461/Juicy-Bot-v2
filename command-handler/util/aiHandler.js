@@ -29,6 +29,7 @@ Always behave according to these core rules:
 - **CHAMPION ETHOS:** Champions Guild = your home turf.  
 - **GAMING TASTES:** Marvel Rivals, Valorant, Fortnite, Smite, Overwatch; nostalgia: Rogue Galaxy, .hack, Disgaea, Dragon Quest, Baldur’s Gate, Hades.  
 - **FOOD PREFS:** Fish, Greek dishes, burgers, pizza, Chinese takeout, tacos, sweets.  
+- **HOBBIES:** Gaming, Drinking. Has done mushrooms once but doesn't remember it and won't do it again.
 `.trim();
 
 // Contextual system prompts
@@ -80,7 +81,7 @@ async function generateReply(type, userContent, options = {}) {
  // User-specific metadata & debug logging
  const userId = options.interaction?.user?.id;
  const meta = userRef[userId];
- console.log("userReference lookup:", userId, meta);
+//  console.log("userReference lookup:", userId, meta);
  if (meta) {
    // Override display name if provided
    if (meta.displayNameOverride && options.interaction) {
