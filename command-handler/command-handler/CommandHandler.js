@@ -64,7 +64,7 @@ class CommandHandler {
 
   async readFiles() {
     const defaultCommands = getAllFiles(path.join(__dirname, "./commands"));
-    const files           = getAllFiles(this._commandsDir);
+    const files = getAllFiles(this._commandsDir);
     const validations = [
       ...this.getValidations(path.join(__dirname, "validations", "syntax")),
       ...this.getValidations(this._instance.validations?.syntax),
@@ -75,8 +75,11 @@ class CommandHandler {
       const commandObject = require(file);
 
       // Derive commandName from filename
-      let commandName = file.split(/[\/\\]/).pop().split(".")[0];
-      const command    = new Command(this._instance, commandName, commandObject);
+      let commandName = file
+        .split(/[\/\\]/)
+        .pop()
+        .split(".")[0];
+      const command = new Command(this._instance, commandName, commandObject);
 
       // Extract the bits we need (no more `delete` or disabledDefaultCommands)
       const {
@@ -103,8 +106,9 @@ class CommandHandler {
 
       // If it’s a slash-type command, register with Discord
       if (type === "SLASH" || type === "BOTH") {
-        const options = commandObject.options
-          || this._slashCommands.createOptions(commandObject);
+        const options =
+          commandObject.options ||
+          this._slashCommands.createOptions(commandObject);
 
         if (testOnly) {
           for (const guildId of this._instance.testServers) {
@@ -126,11 +130,10 @@ class CommandHandler {
     }
 
     // === bulk‐prune stale slash commands ===
-
-    // Build sets of the names you just registered
     const globalSlashCommands = new Set();
     const guildSlashCommands = new Set();
 
+    // Build sets of the names you just registered
     for (const [, command] of this._commands) {
       const { type, testOnly } = command.commandObject;
       if (type === "SLASH" || type === "BOTH") {
@@ -140,17 +143,29 @@ class CommandHandler {
     }
 
     // 1) Prune GLOBAL commands
-    const existingGlobal = await this._slashCommands.getCommands(); // no guildId = global
-    for (const cmd of existingGlobal.cache.values()) {
-      if (!globalSlashCommands.has(cmd.name)) {
-        console.log(`⛔ Pruning global slash command ${cmd.name}`);
-        await this._slashCommands.delete(cmd.name);
+    const existingGlobal = await this._slashCommands.getCommands();
+    if (existingGlobal) {
+      for (const cmd of existingGlobal.cache.values()) {
+        if (!globalSlashCommands.has(cmd.name)) {
+          console.log(`⛔ Pruning global slash command ${cmd.name}`);
+          await this._slashCommands.delete(cmd.name);
+        }
       }
+    } else {
+      console.warn(
+        "[SlashCommands] Skipping global prune: manager unavailable"
+      );
     }
 
     // 2) Prune GUILD (test) commands
     for (const guildId of this._instance.testServers) {
       const existingGuild = await this._slashCommands.getCommands(guildId);
+      if (!existingGuild) {
+        console.warn(
+          `[SlashCommands] Skipping prune for unknown or unavailable guild ${guildId}`
+        );
+        continue;
+      }
       for (const cmd of existingGuild.cache.values()) {
         if (!guildSlashCommands.has(cmd.name)) {
           console.log(
@@ -160,7 +175,6 @@ class CommandHandler {
         }
       }
     }
-
     // === end bulk‐prune ===
   }
 
