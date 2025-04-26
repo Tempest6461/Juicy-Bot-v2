@@ -51,6 +51,7 @@ module.exports = async (member, instance) => {
   const welcomeChan = channels.cache.get(chanId ?? systemChannelId);
   if (!welcomeChan) return;
 
+  // 50% AI, 50% legacy
   if (Math.random() < 0.5) {
     await welcomeChan.sendTyping();
     const prompt = `New member in ${guildName}: <@${userId}>`;
@@ -60,7 +61,16 @@ module.exports = async (member, instance) => {
       examples: aiWelcomeExamples,
       maxTokens: 80,
     });
-    if (aiText) return welcomeChan.send(`<@${userId}> ${aiText}`);
+
+    if (aiText) {
+      // Only prefix the mention if the model didn't already
+      let text = aiText.trim();
+      const mention = `<@${userId}>`;
+      if (!text.startsWith("<@")) {
+        text = `${mention} ${text}`;
+      }
+      return welcomeChan.send(text);
+    }
   }
 
   // Legacy fallback
