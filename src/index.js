@@ -1,3 +1,4 @@
+// src/index.js
 const {
   Client,
   GatewayIntentBits,
@@ -30,19 +31,16 @@ client.juicyState = {
   lastMoodChange: Date.now(),
 };
 
-client.on("ready", () => {
+client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 
   client.user.setActivity("with my code.", { type: ActivityType.PLAYING });
 
   // ★ Every minute, drift Juicy’s mood back toward neutral ★
   setInterval(() => decayMood(client), 60 * 1000);
-});
 
-(async () => {
-  await client.login(process.env.TOKEN);
-
-  const instance = new CH({
+  // ★ Initialize Command Handler after ready ★
+  new CH({
     client,
     mongoUri: process.env.MONGO_URI,
     commandsDir: path.join(__dirname, "commands"),
@@ -58,7 +56,6 @@ client.on("ready", () => {
       botOwnerBypass: true,
       dbRequired: 300, // 5 minutes
     },
-
     events: {
       dir: path.join(__dirname, "events"),
       interactionCreate: {
@@ -73,4 +70,7 @@ client.on("ready", () => {
       },
     },
   });
-})();
+});
+
+// Log in after wiring up the ready handler
+client.login(process.env.TOKEN);

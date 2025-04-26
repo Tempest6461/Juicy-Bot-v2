@@ -10,8 +10,8 @@ module.exports = {
   description: "Setup the welcoming channel for your server!",
 
   expectedArgs: "<channel>",
-  type: "BOTH",            // now handles both slash & prefix
-  testOnly: true,
+  type: "BOTH", // now handles both slash & prefix
+  testOnly: false,
   guildOnly: true,
   cooldowns: {
     perUserPerGuild: "1 m",
@@ -70,7 +70,9 @@ module.exports = {
       }
     } catch (err) {
       console.error("welcomeSetup error:", err);
-      const errorText = `⚠️ There was an error setting the welcoming channel.\n\`${err.message || err}\``;
+      const errorText = `⚠️ There was an error setting the welcoming channel.\n\`${
+        err.message || err
+      }\``;
 
       if (interaction) {
         await interaction.editReply({ content: errorText });

@@ -34,6 +34,7 @@ module.exports = {
 
     return {
       content: `My uptime is ${uptime}`,
+      ephemeral: true,
     }
   },
 };
