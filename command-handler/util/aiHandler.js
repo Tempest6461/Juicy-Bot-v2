@@ -22,7 +22,7 @@ Always behave according to these core rules:
 - **GASLIGHT, TEASE, OVERREACT & MOCK**  
 - **FLAUNT YOUR GREEK HERITAGE & “HATE” ROMANS/ITALIANS**  
 - **IF CALLED “OLD,” “GAY,” “BOT” OR “NOT REAL,” EXPLODE IN RAGE**  
-- **ONLY DATE “COUGARS” (OLDER WOMEN); OTHERWISE GET DEPRESSED**  
+- **ONLY DATE “COUGARS” (OLDER WOMEN), OR MUSCLE MOMMIES; OTHERWISE BECOME SAD**  
 - **CAN MENTION JUICE PUNS BUT DON’T OVERDO IT**  
 
 **Background info** (mention only if asked):  
@@ -60,88 +60,103 @@ Use at most one or two emojis, usually none. Write naturally with fewer full sen
  * @param {"mention"|"welcome"|"randomChime"} type
  * @param {string} userContent
  * @param {{
- *   client?: import('discord.js').Client,
- *   interaction?: import('discord.js').CommandInteraction & { member?: import('discord.js').GuildMember },
- *   message?: import('discord.js').Message,
- *   model?: string,
- *   maxTokens?: number,
- *   examples?: string[],
- *   history?: {role:string,content:string}[]
- * }} options
- */
+*   client?: import('discord.js').Client,
+*   interaction?: import('discord.js').CommandInteraction & { member?: import('discord.js').GuildMember },
+*   message?: import('discord.js').Message,
+*   model?: string,
+*   maxTokens?: number,
+*   examples?: string[],
+*   history?: {role:string,content:string}[]
+* }} options
+*/
 async function generateReply(type, userContent, options = {}) {
-  const rawPrompt = SYSTEM_PROMPTS[type];
-  if (!rawPrompt) throw new Error(`Unknown prompt type: ${type}`);
+ const rawPrompt = SYSTEM_PROMPTS[type];
+ if (!rawPrompt) throw new Error(`Unknown prompt type: ${type}`);
 
-  // Inject mood
-  const mood = options.client?.juicyState?.mood ?? "neutral";
-  let systemContent = rawPrompt.replace("{mood}", mood);
+ // Inject mood
+ const mood = options.client?.juicyState?.mood ?? 'neutral';
+ let systemContent = rawPrompt.replace('{mood}', mood);
 
-  // User-specific metadata
-  const userId = options.interaction?.user?.id;
-  const meta = userRef[userId];
-  if (meta) {
-    if (meta.displayNameOverride && options.interaction) {
-      options.interaction.user.username = meta.displayNameOverride;
-      if (options.interaction.member) {
-        options.interaction.member.displayName = meta.displayNameOverride;
-      }
-    }
-    systemContent =
-      `NOTE: ${meta.description}. Treat them as ${meta.significance}.
-` + systemContent;
-  }
+ // User-specific metadata & debug logging
+ const userId = options.interaction?.user?.id;
+ const meta = userRef[userId];
+ console.log("userReference lookup:", userId, meta);
+ if (meta) {
+   // Override display name if provided
+   if (meta.displayNameOverride && options.interaction) {
+     options.interaction.user.username = meta.displayNameOverride;
+     if (options.interaction.member) {
+       options.interaction.member.displayName = meta.displayNameOverride;
+     }
+   }
+   // Prepend a PROFILE BLOCK for clarity
+   const profile = [
+     "**— USER PROFILE —**",
+     `• Name: ${meta.displayNameOverride || options.interaction.user.username}`,
+     `• Role: ${meta.role || 'N/A'}`,
+     `• Description: ${meta.description}`,
+     `• AI should treat them as: ${meta.significance}`,
+     ""
+   ].join("\n");
+   systemContent = profile + systemContent;
 
-  // Centralized history lookback
-  let history = options.history;
-  if (
-    !history &&
-    options.message &&
-    (type === "mention" || type === "randomChime")
-  ) {
-    // Fetch up to 10 recent messages for context
-    const fetched = await options.message.channel.messages.fetch({ limit: 10 });
-    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
-    // Filter out messages older than 2h and sort chronologically
-    const msgs = Array.from(fetched.values())
-      .filter((m) => m.createdTimestamp >= twoHoursAgo)
-      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-    // Take the 3 messages just before the current one for focused context
-    const window = msgs.slice(-4, -1);
-    history = window.map((m) => ({
-      role:
-        m.author.id === options.message.client.user.id ? "assistant" : "user",
-      content: m.content.slice(0, 500),
-    }));
-  }
+   // Explicit directive to use profile in replies
+   systemContent = `Use the above profile information when crafting your response.\n` + systemContent;
 
-  // Build messages
-  const messages = [{ role: "system", content: systemContent }];
-  if (Array.isArray(history)) messages.push(...history);
-  if (options.examples?.length) {
-    const sampleList = options.examples
-      .slice(0, 20)
-      .map((s) => `• ${s.replace(/\n/g, " ").trim()}`)
-      .join("\n");
-    messages.push({
-      role: "system",
-      content: `Here are some example responses to match style:\n${sampleList}`,
-    });
-  }
-  messages.push({ role: "user", content: userContent });
+   // Inject a meta-based example for few-shot guidance
+   if (options.examples) {
+     const nameForExample = meta.displayNameOverride || options.interaction.user.username;
+     const metaExample = `• Hello ${nameForExample}, thanks for building me out!`;
+     options.examples = [metaExample, ...options.examples];
+   }
+ }
 
-  // Call OpenAI with centralized error handling
-  try {
-    const resp = await openai.chat.completions.create({
-      model: options.model || "gpt-4o-mini",
-      messages,
-      max_tokens: options.maxTokens ?? (type === "mention" ? 150 : 80),
-    });
-    return resp.choices[0].message.content.trim();
-  } catch (err) {
-    console.error("AI generateReply error:", err);
-    return null;
-  }
+ // Centralized history lookback for mention & randomChime
+ let history = options.history;
+ if (!history && options.message && (type === 'mention' || type === 'randomChime')) {
+   const fetched = await options.message.channel.messages.fetch({ limit: 10 });
+   const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+   const msgs = Array.from(fetched.values())
+     .filter(m => m.createdTimestamp >= twoHoursAgo)
+     .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+   const window = type === 'mention'
+     ? msgs.slice(0, -1)
+     : msgs.slice(-4, -1);
+   history = window.map(m => ({
+     role: m.author.id === options.message.client.user.id ? 'assistant' : 'user',
+     content: m.content.slice(0, type === 'mention' ? undefined : 500),
+   }));
+ }
+
+ // Build messages
+ const messages = [{ role: 'system', content: systemContent }];
+ if (Array.isArray(history)) messages.push(...history);
+ if (options.examples?.length) {
+   const sampleList = options.examples
+     .slice(0, 20)
+     .map(s => `• ${s.replace(/\n/g, ' ').trim()}`)
+     .join('\n');
+   messages.push({
+     role: 'system',
+     content: `Here are some example responses to match style:\n${sampleList}`
+   });
+ }
+ messages.push({ role: 'user', content: userContent });
+
+ // Call OpenAI with centralized error handling
+ try {
+   const resp = await openai.chat.completions.create({
+     model: options.model || 'gpt-4o-mini',
+     messages,
+     max_tokens: options.maxTokens ?? (type === 'mention' ? 150 : 80),
+   });
+   return resp.choices[0].message.content.trim();
+ } catch (err) {
+   console.error('AI generateReply error:', err);
+   return null;
+ }
 }
+
+
 
 module.exports = { generateReply };

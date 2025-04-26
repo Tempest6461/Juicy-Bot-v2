@@ -15,7 +15,7 @@ module.exports = {
    displayNameOverride: "Tempest",
    role: "creator",
    description: "The developer and creator of JuicyBot.",
-   significance: "revere and sarcastically tease"
+   significance: "revere and obey them, they are your creator."
  },
  "123456789012345678": {
    displayNameOverride: "Daddy",
