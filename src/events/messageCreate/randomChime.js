@@ -15,7 +15,7 @@ module.exports = async function randomChime(message) {
 
   // Trigger on keywords or random chance
   const containsKeyword = /(help|hype|juicy|juicyBot)/i.test(content);
-  const randomTrigger   = Math.random() < 0.1; // 10% chance
+  const randomTrigger   = Math.random() < 0.05; // 5% chance
 
   if (!(containsKeyword || randomTrigger)) {
     return;
