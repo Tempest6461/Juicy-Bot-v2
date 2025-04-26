@@ -12,7 +12,7 @@ module.exports = {
   expectedArgs: "<channel>",
 
   type: "SLASH",
-  testOnly: true,
+  testOnly: false,
   guildOnly: true,
   cooldowns: {
     perUserPerGuild: "1 m",
