@@ -141,43 +141,28 @@ module.exports = async function handleMention(client, message) {
   if (!message.guild || message.author.bot) return;
   if (!message.mentions.has(client.user)) return;
 
-  // Always try AI first
-  try {
-    await message.channel.sendTyping();
+  await message.channel.sendTyping();
 
-    // Fetch last 6 messages (including this one) and build history
-    const fetched = await message.channel.messages.fetch({ limit: 6 });
-    const msgs = Array.from(fetched.values()).sort(
-      (a, b) => a.createdTimestamp - b.createdTimestamp
-    );
-    const history = msgs.slice(0, -1).map((m) => ({
-      role: m.author.id === client.user.id ? "assistant" : "user",
-      content: m.content,
-    }));
+  // Clean mention
+  const userText = message.content.replace(/<@!?\d+>/g, "").trim();
 
-    // Clean mention out of content
-    const userText = message.content.replace(/<@!?\d+>/g, "").trim();
+  // Sample examples
+  const examples = [
+    ...sample(initialResponses, 5),
+    ...sample(secondResponses, 5),
+    ...sample(thirdResponses, 5),
+  ];
 
-    // Sample 5 examples from each legacy category
-    const examples = [
-      ...sample(initialResponses, 5),
-      ...sample(secondResponses, 5),
-      ...sample(thirdResponses, 5),
-    ];
+  // AI attempt
+  const aiReply = await generateReply("mention", userText, {
+    interaction: { user: message.author },
+    client,
+    examples,
+    maxTokens: 150
+  });
+  if (aiReply) return message.reply(aiReply);
 
-    // Generate AI reply with context history
-    const aiReply = await generateReply("mention", userText, {
-      client,
-      history,
-      examples,
-      maxTokens: 150,
-    });
-    return message.reply(aiReply);
-
-  } catch (err) {
-    console.error("AI mention failed, falling back to legacy:", err);
-
-    // Legacy fallback
+    // Legacy fallback logic unchanged...
     const authorId = message.author.id;
     const now      = Date.now();
     const prevTime = recentPings.get(authorId) || 0;
@@ -214,5 +199,4 @@ module.exports = async function handleMention(client, message) {
       data.count = 0;
       pingCounts.set(authorId, data);
     }, 60_000);
-  }
 };

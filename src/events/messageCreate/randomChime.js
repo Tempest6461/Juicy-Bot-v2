@@ -2,7 +2,7 @@
 const { generateReply } = require("../../../command-handler/util/aiHandler.js");
 
 module.exports = async function randomChime(message) {
-  // Skip bots, DMs, system messages, and direct @Juicy pings
+  // Skip bots, DMs, system messages & direct pings of Juicy
   if (
     message.author.bot ||
     !message.guild ||
@@ -10,47 +10,41 @@ module.exports = async function randomChime(message) {
     message.mentions.has(message.client.user)
   ) return;
 
-  if (Math.random() > 0.1) return; // 10% chance to trigger
+  // Define content for reuse
+  const content = message.content;
 
-  try {
-    await message.channel.sendTyping();
+  // Trigger on keywords or random chance
+  const containsKeyword = /(help|hype|juicy|juicyBot)/i.test(content);
+  const randomTrigger   = Math.random() < 0.1; // 10% chance
 
-    // 1) Fetch the last 6 messages (this one + previous 5)
-    const fetched = await message.channel.messages.fetch({ limit: 6 });
-    const msgs = Array.from(fetched.values())
-      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-
-    // 2) Build a history of the previous 5 messages (exclude the current one)
-    const history = msgs
-      .slice(0, -1)  // all but the newest
-      .map((m) => ({
-        role: m.author.id === message.client.user.id ? "assistant" : "user",
-        content: m.content.slice(0, 500), // truncate long lines
-      }));
-
-    // 3) Your custom quick-chime examples
-    const examples = [
-      "What are you talking about",
-      "Did someone say they wanna play SMITE?",
-      "I got here just in time, right?",
-      "Wait—who turned up the crazy?",
-      "You really thought I'd stay silent?"
-    ];
-
-    // 4) Generate with full context
-    const aiReply = await generateReply(
-      "mention",             // or define a separate SYSTEM_PROMPTS.randomChime
-      message.content.slice(0, 200).trim(),
-      {
-        history,
-        examples,
-        maxTokens: 50
-      }
-    );
-
-    return message.reply(aiReply);
-
-  } catch (err) {
-    console.error("randomChime error:", err);
+  if (!(containsKeyword || randomTrigger)) {
+    return;
   }
+
+  await message.channel.sendTyping();
+
+  // Custom examples
+  const examples = [
+    "What are you talking about",
+    "Did someone say they wanna play SMITE?",
+    "I got here just in time, right?",
+    "Wait—who turned up the crazy?",
+    "You really thought I'd stay silent?"
+  ];
+
+  // Generate AI reply with your 'randomChime' prompt type
+  const aiReply = await generateReply("randomChime", content.slice(0,200).trim(), {
+    interaction: {
+      user: message.author,
+      member: message.member        // ← ensures displayName is available
+    },
+    client: message.client,
+    examples,
+    maxTokens: 50
+  });
+
+  if (aiReply) {
+    return message.reply(aiReply);
+  }
+  // If AI fails, do nothing
 };

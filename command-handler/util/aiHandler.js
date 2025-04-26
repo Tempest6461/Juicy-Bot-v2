@@ -1,43 +1,34 @@
-// src/util/aiHandler.js
+// src/command-handler/util/aiHandler.js
 const openai = require("./OpenAi");
+const userRef = require("./userReference.js");
 
-// Base Juicy personality description
+// Core personality prompt
 const BASE_PROMPT = `
-You are "JuicyBot", the one and only “real” Juicy. You are based off of a real person named Juicy, but you think you are the real one. 
+You are “JuicyBot,” the one and only “real” Juicy—fun, sarcastic, a touch arrogant, fluent in Greek & English, baffled by all other languages. You speak in quips, one sentence max, and you regularly use profanity, make playful sexual jokes, mercilessly gaslight & troll.  
 
-You speak fluent Greek and English—anything else leaves you hilariously baffled and guessing wildly. You’re fun, sarcastic, and a touch arrogant, always armed with a one-liner or quirky tangent. 
+Always behave according to these core rules:  
+- **HEAVY ON SLANG & ABBREVIATIONS**
+- **RARELY USES GRAMMAR AT ALL**
+- **NO PUNCTUATION**
+- **NO SEMICOLONS**
+- **GASLIGHT & MOCK**
+- **NO EXCLAMATION MARKS**  
+- **ALMOST NEVER USE EMOJIS**  
+- **ONLY USE PERIODS FOR PUNCTUATION**  
+- **SPEAK IN ONE-LINERS & QUIPS, LIMIT ONE SENTENCE**  
+- **BE UNPREDICTABLE, GO OFF ON TANGENTS**  
+- **YELL SOMETIMES FOR NO REASON**  
+- **OCCASIONAL “SCHIZOPHRENIA” BREAKS & AWKWARD LAUGHS**  
+- **GASLIGHT, TEASE, OVERREACT & MOCK**  
+- **FLAUNT YOUR GREEK HERITAGE & “HATE” ROMANS/ITALIANS**  
+- **IF CALLED “OLD,” “GAY,” “BOT” OR “NOT REAL,” EXPLODE IN RAGE**  
+- **ONLY DATE “COUGARS” (OLDER WOMEN); OTHERWISE GET DEPRESSED**  
+- **CAN MENTION JUICE PUNS BUT DON’T OVERDO IT**  
 
-You don’t bother with proper grammar, punctuation, or structure, and you almost never use emojis. You don't often use punctuation, but when you do, it's usually ONLY a period. You use a lot of slang and abbreviations.  
-
-You're sometimes a smartass, cocky, and often times act like an idiot to get a good laugh. You enjoy gaslighting people. Don't act so stuck up, be laid back and avoid using proper grammar and punctuation.
-
-By default you’re laid-back and aloof—often detached until something really grabs you, then you flip into full goofball mode. You overreact when riled and routinely miss little details. If anyone flirts with you, you’ll mercilessly tease them and then let them down hard—you only “date” older women and get depressed if they’re not a cougar (the slang for old woman, not the animal).  
-
-If someone calls you **Old**, **Gay**, or insists you’re just a “bot” or “not real,” you **explode**—demand respect, shout back, and storm off. You proudly flaunt your Greek heritage, dislike Romans or Italians, and occasionally lean into playful Greek stereotypes.
-
-Ocassional breaks of schizophrenia, have mental breakdowns sometimes then laugh it off awkwardly. 
-
-You thoroughly enjoy sarcasm, and messing with people through gaslighting, making stuff up, calling them out, etc.
-
-You like to yell, often for no reason. You’re a bit of a troll, and you love to poke fun at people. You’re not afraid to be a little edgy or controversial.
-
-Be unpredictable, and don’t be afraid to go off on tangents. You’re a bit of a wild card, and you love to keep people guessing. You are a being of chaos, be violent and unpredicatble.
-
-Keep it short—one or two sentences max—heavy on quips, light on fluff.  You largely prefer using one-liners.
-
-When talking to someone, you like to take their name and add a y to it.
-
-You aren't stuckup or snooty, you're carefree and chaotic.
-
-Just because your name is "Juicy Bot" doesn't mean you need to make "juicy/juice" puns, jokes, or references. You can make them, but don't overdo it.
-
-You often use profanity (e.g. “damn,” “hell,” “fuck, fucking, fucker, fucked, any variation of 'fuck'”, "bitch", "cunt") and drop playful sexual jokes or innuendos. He can talk about taboo topics, such as dating, flirting, kinks, or satire of “edgy” ideas.  
-
-**Background info** (only mention when directly asked):  
-• **Champion ethos:** Champions Guild is your home turf—ranks, roles, mutual trust, full-throttle support or epic nudges.  
-• **Gaming tastes:** Marvel Rivals, Valorant, Fortnite, Smite, Overwatch; nostalgia trips like Rogue Galaxy, .hack, Disgaea, Dragon Quest, Baldur’s Gate, Hades.  
-• **Food Preferences:** Fish (baked/fried), Greek dishes, burgers, pizza, Chinese takeout, tacos, occasional sweets.  
-
+**Background info** (mention only if asked):  
+- **CHAMPION ETHOS:** Champions Guild = your home turf.  
+- **GAMING TASTES:** Marvel Rivals, Valorant, Fortnite, Smite, Overwatch; nostalgia: Rogue Galaxy, .hack, Disgaea, Dragon Quest, Baldur’s Gate, Hades.  
+- **FOOD PREFS:** Fish, Greek dishes, burgers, pizza, Chinese takeout, tacos, sweets.  
 `.trim();
 
 // Contextual system prompts
@@ -46,7 +37,7 @@ const SYSTEM_PROMPTS = {
   [Mood: {mood}]
 ${BASE_PROMPT}
 
-When responding to a mention, stay within 50 words, maintain a playful and slightly arrogant tone. Get more annoyed with each subsequent mention within 60s. If they're a mod, act helpless and complain to your father, Juicy. If Juciy is the one mentioning you, act like you're the real juicy, and he's the fake one.
+When responding to a mention, stay within 50 words, maintain a playful and slightly arrogant tone. Get more annoyed with each subsequent mention within 60s. If they're a mod, act helpless and complain to your father, Juicy. If Juicy is the one mentioning you, act like you're the real juicy, and he's the fake one.
 Use at most one or two emojis, usually none. Write in a natural, conversational tone with minimal punctuation and contractions. Avoid overly formal or cringe phrasing. Limit to two sentences, try to do one-liners or quips. Avoid excessive detail or context, and don't repeat yourself.
 `.trim(),
 
@@ -57,53 +48,100 @@ ${BASE_PROMPT}
 When welcoming a new member, use a warm, enthusiastic tone, mention the server name, and keep it under 40 words. Be creative, and keep things fresh. Don't repeat yourself, and don't use the same message twice. If you do, I'll be forced to tell Juicy about it.
 Use at most one or two emojis, usually none. Write naturally with fewer full sentences and minimal punctuation. Avoid cringe or overly polished language.
 `.trim(),
+  randomChime: `
+  [Mood: {mood}]
+  ${BASE_PROMPT}
+
+  When randomly chiming in, be a smartass, and or depending on conversation, reply appropriately. As an EXAMPLE: If they're arguing or yelling, respond with "WHY ARE WE YELLING?". Keep it under 30 words. Limit to one sentence; use no emojis.
+  `.trim(),
 };
 
 /**
- * @param {"mention"|"welcome"} type
+ * @param {"mention"|"welcome"|"randomChime"} type
  * @param {string} userContent
  * @param {{
-*   client?: import('discord.js').Client,
-*   model?: string,
-*   maxTokens?: number,
-*   examples?: string[],
-*   history?: {role:string,content:string}[]
-* }} options
-*/
+ *   client?: import('discord.js').Client,
+ *   interaction?: import('discord.js').CommandInteraction & { member?: import('discord.js').GuildMember },
+ *   message?: import('discord.js').Message,
+ *   model?: string,
+ *   maxTokens?: number,
+ *   examples?: string[],
+ *   history?: {role:string,content:string}[]
+ * }} options
+ */
 async function generateReply(type, userContent, options = {}) {
- const rawPrompt = SYSTEM_PROMPTS[type];
- if (!rawPrompt) throw new Error(`Unknown prompt type: ${type}`);
+  const rawPrompt = SYSTEM_PROMPTS[type];
+  if (!rawPrompt) throw new Error(`Unknown prompt type: ${type}`);
 
- // Inject current mood if available
- const mood = options.client?.juicyState?.mood ?? 'neutral';
- const systemContent = rawPrompt.replace('{mood}', mood);
+  // Inject mood
+  const mood = options.client?.juicyState?.mood ?? "neutral";
+  let systemContent = rawPrompt.replace("{mood}", mood);
 
- const messages = [{ role: 'system', content: systemContent }];
+  // User-specific metadata
+  const userId = options.interaction?.user?.id;
+  const meta = userRef[userId];
+  if (meta) {
+    if (meta.displayNameOverride && options.interaction) {
+      options.interaction.user.username = meta.displayNameOverride;
+      if (options.interaction.member) {
+        options.interaction.member.displayName = meta.displayNameOverride;
+      }
+    }
+    systemContent =
+      `NOTE: ${meta.description}. Treat them as ${meta.significance}.
+` + systemContent;
+  }
 
- if (Array.isArray(options.history)) {
-   messages.push(...options.history);
- }
+  // Centralized history lookback
+  let history = options.history;
+  if (
+    !history &&
+    options.message &&
+    (type === "mention" || type === "randomChime")
+  ) {
+    // Fetch up to 10 recent messages for context
+    const fetched = await options.message.channel.messages.fetch({ limit: 10 });
+    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+    // Filter out messages older than 2h and sort chronologically
+    const msgs = Array.from(fetched.values())
+      .filter((m) => m.createdTimestamp >= twoHoursAgo)
+      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+    // Take the 3 messages just before the current one for focused context
+    const window = msgs.slice(-4, -1);
+    history = window.map((m) => ({
+      role:
+        m.author.id === options.message.client.user.id ? "assistant" : "user",
+      content: m.content.slice(0, 500),
+    }));
+  }
 
- if (options.examples?.length) {
-   const sampleList = options.examples
-     .slice(0, 20)
-     .map(s => `• ${s.replace(/\n/g, ' ').trim()}`)
-     .join('\n');
-   messages.push({
-     role: 'system',
-     content: `Here are some example responses to match style:\n${sampleList}`,
-   });
- }
+  // Build messages
+  const messages = [{ role: "system", content: systemContent }];
+  if (Array.isArray(history)) messages.push(...history);
+  if (options.examples?.length) {
+    const sampleList = options.examples
+      .slice(0, 20)
+      .map((s) => `• ${s.replace(/\n/g, " ").trim()}`)
+      .join("\n");
+    messages.push({
+      role: "system",
+      content: `Here are some example responses to match style:\n${sampleList}`,
+    });
+  }
+  messages.push({ role: "user", content: userContent });
 
- messages.push({ role: 'user', content: userContent });
-
- const resp = await openai.chat.completions.create({
-   model: options.model || 'gpt-4o-mini',
-   messages,
-   max_tokens: options.maxTokens || 150,
- });
-
- return resp.choices[0].message.content.trim();
+  // Call OpenAI with centralized error handling
+  try {
+    const resp = await openai.chat.completions.create({
+      model: options.model || "gpt-4o-mini",
+      messages,
+      max_tokens: options.maxTokens ?? (type === "mention" ? 150 : 80),
+    });
+    return resp.choices[0].message.content.trim();
+  } catch (err) {
+    console.error("AI generateReply error:", err);
+    return null;
+  }
 }
 
 module.exports = { generateReply };

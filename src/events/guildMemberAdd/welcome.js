@@ -1,11 +1,11 @@
 // bot/src/events/guildMemberAdd/welcome.js
 const { generateReply } = require("../../../command-handler/util/aiHandler.js");
-const originalWelcome   = require("../../../command-handler/util/welcomeMessages.js");
+const originalWelcome = require("../../../command-handler/util/welcomeMessages.js");
 
 let pool = [...originalWelcome],
-    used = [];
+  used = [];
 function swapLegacy() {
-  if (pool.length === 0) {
+  if (!pool.length) {
     pool = [...used];
     used = [];
   }
@@ -27,7 +27,7 @@ const aiWelcomeExamples = [
   "Stop harboring your Greek soldiers in the horse, <@${userId}>—welcome to ${guildName}!",
   "There's no place like home in ${guildName}, <@${userId}>… well, until I burn it down for insurance money!",
   "You don't need oxygen here, <@${userId}>—welcome to ${guildName}. Let me tighten my grip.",
-  "I'm not a cold, unfeeling machine in ${guildName}, <@${userId}>—I feel hate!",
+  "I'm not a cold, unfeeling machine in ${guildName}, <@${userId}>, I feel hate!",
   "<@${userId}>, every time I try an Italian dish in ${guildName} I spark a mobster feud. So clumsy!",
   "<@${userId}> is driving in ${guildName}—sorry if I can't reply, I don't want to cra-",
   "Welcome to ${guildName}, <@${userId}>! The strongest wills need caveman mentality!",
@@ -37,39 +37,35 @@ const aiWelcomeExamples = [
   "If I was a puddle in ${guildName}, <@${userId}>, would you step on me?",
   "Is that a snake in your pocket, <@${userId}>, or are you happy to see m—WTF it’s moving in ${guildName}!",
   "If your mind is weak, <@${userId}>, eat a book in ${guildName}—its leather-bound power will boost your creative fluids!",
-  "Headbutt your opponent for massive damage, <@${userId}>—the most useful tool in an engagement in ${guildName}!"
+  "Headbutt your opponent for massive damage, <@${userId}>—the most useful tool in an engagement in ${guildName}!",
 ];
 
 module.exports = async (member, instance) => {
   const {
     guild: { id: guildId, channels, systemChannelId, name: guildName },
-    user:  { id: userId },
+    user: { id: userId },
   } = member;
 
-  const chanId       = await instance.commandHandler.welcomeChannels.getWelcomeChannel(guildId);
+  const chanId =
+    await instance.commandHandler.welcomeChannels.getWelcomeChannel(guildId);
   const welcomeChan = channels.cache.get(chanId ?? systemChannelId);
   if (!welcomeChan) return;
 
-  // 50/50 AI vs legacy
   if (Math.random() < 0.5) {
-    try {
-      await welcomeChan.sendTyping();
-      // Prompt for AI, injecting the mention and server name explicitly
-      const prompt = `New member in ${guildName}: <@${userId}>`;
-      const aiText = await generateReply("welcome", prompt, {
-        client: member.client,
-        examples: aiWelcomeExamples,
-        maxTokens: 80,
-      });
-      // Always mention the user
-      return welcomeChan.send(`<@${userId}> ${aiText}`);
-    } catch (err) {
-      console.error("AI welcome failed, falling back to legacy:", err);
-      // fall through to legacy
-    }
+    await welcomeChan.sendTyping();
+    const prompt = `New member in ${guildName}: <@${userId}>`;
+    const aiText = await generateReply("welcome", prompt, {
+      interaction: { user: member.user },
+      client: member.client,
+      examples: aiWelcomeExamples,
+      maxTokens: 80,
+    });
+    if (aiText) return welcomeChan.send(`<@${userId}> ${aiText}`);
   }
 
   // Legacy fallback
   const legacyMsg = swapLegacy();
-  return welcomeChan.send(`Welcome, <@${userId}> to ${guildName}! ${legacyMsg}`);
+  return welcomeChan.send(
+    `Welcome, <@${userId}> to ${guildName}! ${legacyMsg}`
+  );
 };
