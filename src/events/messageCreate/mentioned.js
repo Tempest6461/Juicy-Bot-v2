@@ -1,5 +1,5 @@
 // src/events/messageCreate/mentioned.js
-const { generateReply }       = require("../../../command-handler/util/aiHandler.js");
+const { generateReply } = require("../../../command-handler/util/aiHandler.js");
 const { PermissionFlagsBits } = require("discord.js");
 
 // ——— Legacy state & full response lists ———
@@ -92,7 +92,7 @@ function sample(arr, n) {
   return copy.slice(0, n);
 }
 
-// Legacy handlers
+// Timeout helper
 function timeoutUser(message, seconds, reason) {
   try {
     message.member.timeout(seconds * 1000, reason);
@@ -101,6 +101,7 @@ function timeoutUser(message, seconds, reason) {
   }
 }
 
+// Ping handlers
 function handleInitialPing(message, authorId) {
   const resp = sample(initialResponses, 1)[0];
   message.reply(resp);
@@ -141,9 +142,8 @@ module.exports = async function handleMention(client, message) {
   // Strip the mention from text
   const userText = message.content.replace(/<@!?\d+>/g, "").trim();
 
-  // Collect any image attachments
+  // Collect attachments and embedded images
   const attachments = [];
-  // Direct attachments
   for (const att of message.attachments.values()) {
     attachments.push({
       url: att.url,
@@ -151,39 +151,27 @@ module.exports = async function handleMention(client, message) {
       contentType: att.contentType,
     });
   }
-  // Embedded images (e.g. URLs turned into embeds)
   for (const embed of message.embeds) {
-    const imageUrl = embed.image?.url || embed.thumbnail?.url;
-    if (imageUrl) {
-      attachments.push({
-        url: imageUrl,
-        name: imageUrl.split("/").pop(),
-        contentType: "image/png",
-      });
-    }
+    const url = embed.image?.url || embed.thumbnail?.url;
+    if (url) attachments.push({ url, name: url.split("/").pop(), contentType: "image/png" });
   }
 
-  console.log("🖼️  Found attachments:", attachments);
-
-  // Build a few-shot example list
+  // Build few-shot examples
   const examples = [
     ...sample(initialResponses, 5),
     ...sample(secondResponses, 5),
     ...sample(thirdResponses, 5),
   ];
 
-  // Try AI first, passing attachments
+  // AI attempt with centralized image processing
   const aiReply = await generateReply("mention", userText, {
     interaction: { user: message.author, member: message.member },
-    message,
     client,
+    message,
     examples,
     maxTokens: 150,
     attachments,
   });
-
-  console.log("💬 AI reply:", aiReply);
-
   if (aiReply) {
     return message.reply(aiReply);
   }
@@ -208,9 +196,7 @@ module.exports = async function handleMention(client, message) {
     PermissionFlagsBits.ManagePermissions,
     PermissionFlagsBits.Administrator,
   ];
-  const hasMod = modFlags.some((flag) =>
-    message.member.permissions.has(flag)
-  );
+  const hasMod = modFlags.some((flag) => message.member.permissions.has(flag));
 
   if (now - prevTime < 60_000) {
     handleRepeatedPing(message, data.count, hasMod);
