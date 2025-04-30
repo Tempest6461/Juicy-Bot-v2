@@ -1,18 +1,39 @@
-// src/index.js
-const {
-  Client,
-  GatewayIntentBits,
-  Partials,
-  ActivityType,
-} = require("discord.js");
-const CH = require("../command-handler");
-const welcome = require("./events/guildMemberAdd/welcome.js");
-const goodbye = require("./events/guildMemberRemove/goodbye.js");
-const path = require("path");
-require("dotenv/config");
+// bot/src/index.js
+// ─── Load .env before anything else ───────────────────────────────────────────
+require('dotenv/config');
+// ─── Spawn Lavalink ──────────────────────────────────────────────────────────
+const { spawn } = require('child_process');
+const path      = require('path');
 
-// import the mood decay function
-const { decayMood } = require("../command-handler/util/mood.js");
+const jarPath = path.resolve(
+  __dirname,
+  'command-handler',
+  'util',
+  'lavalink',
+  'Lavalink.jar'
+);
+
+console.log('🟢 Spawning Lavalink:', 'java', ['-jar', jarPath]);
+const lavalink = spawn('java', ['-jar', jarPath], {
+  cwd: path.dirname(jarPath),
+  stdio: 'inherit'
+});
+
+lavalink.on('error', err =>
+  console.error('❌ Failed to start Lavalink process:', err)
+);
+lavalink.on('exit', code =>
+  console.log('⚠️ Lavalink exited with code', code)
+);
+
+process.on('exit',  () => lavalink.kill());
+process.on('SIGINT', () => process.exit());
+// ───────────────────────────────────────────────────────────────────────────────
+
+const { Client, GatewayIntentBits, Partials, ActivityType } = require('discord.js');
+const { Manager } = require('erela.js');
+const CH = require('../command-handler');
+const { decayMood } = require('../command-handler/util/mood');
 
 const client = new Client({
   intents: [
@@ -20,57 +41,76 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.DirectMessages,
   ],
   partials: [Partials.Channel],
 });
 
-// ★ Initialize Juicy’s mood state ★
-client.juicyState = {
-  mood: "neutral",          // happy | neutral | salty | hyped
-  lastMoodChange: Date.now(),
-};
+// ─── Lavalink Manager ─────────────────────────────────────────────────────────
+client.manager = new Manager({
+  nodes: [{
+    host: '127.0.0.1',
+    port: 2333,
+    password: 'Grizzly101*',  // match application.yml
+    identifier: 'MainNode',
+    secure: false,
 
-client.once("ready", () => {
+    // ** THESE TWO LINES are absolutely required **
+    version: 'v4',               // use /v4/websocket
+    useVersionPath: true         // instead of the old "/"
+  }],
+  send: (guildId, payload) => {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) guild.shard.send(payload);
+  }
+})
+  .on('nodeConnect', node =>
+    console.log(`[Lavalink] Node connected: ${node.options.identifier}`)
+  )
+  .on('nodeError', (node, err) =>
+    console.error(`[Lavalink] Node ${node.options.identifier} error:`, err)
+  );
+
+// don’t forget to forward raw voice updates…
+client.on('raw', d => client.manager.updateVoiceState(d));
+
+// ─── Ready & Command Handler ─────────────────────────────────────────────────
+client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
-
-  client.user.setActivity("with my code.", { type: ActivityType.PLAYING });
-
-  // ★ Every minute, drift Juicy’s mood back toward neutral ★
+  client.user.setActivity('with my code.', { type: ActivityType.PLAYING });
   setInterval(() => decayMood(client), 60 * 1000);
 
-  // ★ Initialize Command Handler after ready ★
+  // init erela.js now that the client is ready
+  client.manager.init(client.user.id);
+
+  // wire up your commands/events as before
   new CH({
     client,
     mongoUri: process.env.MONGO_URI,
-    commandsDir: path.join(__dirname, "commands"),
-    testServers: ["529877137268670465"],
+    commandsDir: path.join(__dirname, 'commands'),
+    testServers: ['529877137268670465'],
     botOwners: [
-      "131562657680457729",
-      "1014618816115916871",
-      "243432636972793856",
-      "1052879147392835634",
+      '131562657680457729',
+      '1014618816115916871',
+      '243432636972793856',
+      '1052879147392835634'
     ],
     cooldownConfig: {
-      errorMessage: "Please wait {TIME}",
+      errorMessage: 'Please wait {TIME}',
       botOwnerBypass: true,
-      dbRequired: 300, // 5 minutes
+      dbRequired: 300
     },
     events: {
-      dir: path.join(__dirname, "events"),
-      interactionCreate: {
-        isButton: (interaction) => interaction.isButton(),
-      },
-      messageCreate: {
-        isHuman: (message) => !message.author.bot,
-      },
+      dir: path.join(__dirname, 'events'),
+      interactionCreate: { isButton: i => i.isButton() },
+      messageCreate:      { isHuman: m => !m.author.bot },
       validations: {
-        runtime: path.join(__dirname, "validations", "runtime"),
-        syntax: path.join(__dirname, "validations", "syntax"),
+        runtime: path.join(__dirname, 'validations', 'runtime'),
+        syntax:  path.join(__dirname, 'validations', 'syntax'),
       },
     },
   });
 });
 
-// Log in after wiring up the ready handler
 client.login(process.env.TOKEN);

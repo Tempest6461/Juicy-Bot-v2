@@ -30,7 +30,7 @@ module.exports = async function randomChime(message) {
   const content = message.content;
   const guildId = message.guild.id;
   const rate    = guildChimeRates[guildId] ?? DEFAULT_CHIME_RATE;
-  console.log(`[randomChime] Guild ${guildId} chime rate: ${rate}`);
+  // console.log(`[randomChime] Guild ${guildId} chime rate: ${rate}`);
 
   const containsKeyword = /(help|hype|juicy|juicyBot)/i.test(content);
   const randomTrigger   = Math.random() < rate;

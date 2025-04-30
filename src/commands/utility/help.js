@@ -1,243 +1,143 @@
+// src/commands/utility/help.js
 const {
   PermissionFlagsBits,
-  MessageFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
   EmbedBuilder,
 } = require("discord.js");
-const wait = require("node:timers/promises").setTimeout;
 
 module.exports = {
   name: "help",
   category: "Utility",
-  description: "Get help with commands.",
-
-  minArgs: 0,
-  correctSyntax: "Correct syntax: {PREFIX}help",
-
+  description: "Show the interactive help menu.",
   type: "BOTH",
-  testOnly: false,
-  reply: true,
   guildOnly: true,
-
   permissions: [PermissionFlagsBits.SendMessages],
 
-  callback: ({ interaction, message, args }) => {
-    const row = new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId("Help Menu")
-        .setPlaceholder("Select a category")
-        .addOptions([
-          {
-            label: "Help Menu",
-            description: "List of categories.",
-            value: "Help",
-            customId: "Help",
-            emoji: "🤔",
-          },
-          {
-            label: "Fun",
-            description: "Fun commands.",
-            value: "Fun",
-            customId: "Fun",
-            default: false,
-            emoji: "😂",
-          },
-          {
-            label: "Utility",
-            description: "Utility commands.",
-            value: "Utility",
-            customId: "Utility",
-            default: false,
-            emoji: "🛠️",
-          },
-          {
-            label: "Testing",
-            description: "Testing commands.",
-            value: "Testing",
-            customId: "Testing",
-            default: false,
-            emoji: "🧪",
-          },
-        ])
-    );
+  callback: async ({ interaction, message }) => {
+    const isSlash = Boolean(interaction);
+    const user    = isSlash ? interaction.user    : message.author;
+    const channel = isSlash ? interaction.channel : message.channel;
 
-    const helpEmbed = new EmbedBuilder()
+    // ─── Build the menu ─────────────────────────────────────────────────────
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId("help-menu")
+      .setPlaceholder("📚 Select a category")
+      .addOptions([
+        { label: "Main Menu",  value: "main",    emoji: "🤔", description: "Back to start" },
+        { label: "Music",      value: "music",   emoji: "🎵", description: "All music commands" },
+        { label: "Fun",        value: "fun",     emoji: "😂", description: "All fun commands" },
+        { label: "Utility",    value: "utility", emoji: "🛠️", description: "All utility commands" },
+        { label: "Testing",    value: "testing", emoji: "🧪", description: "All testing commands" },
+      ]);
+
+    const row = new ActionRowBuilder().addComponents(menu);
+
+    // ─── Embeds ───────────────────────────────────────────────────────────────
+    const mainEmbed = new EmbedBuilder()
       .setTitle("🤔 Help Menu")
-      .setDescription(
-        "`Please select a category from the dropdown menu below.`"
-      )
-      .setColor("Green")
-      .addFields(
-        {
-          name: "Fun",
-          value: "`Fun commands.`",
-          inline: true,
-        },
-        {
-          name: "Utility",
-          value: "`Utility commands.`",
-          inline: true,
-        },
-        {
-          name: "Testing",
-          value: "`Testing commands.`",
-          inline: true,
-        }
-      );
+      .setDescription("Select a category below.")
+      .setColor("Grey")
+      .addFields([
+        { name: "🎵 Music",   value: "`/help music`",   inline: true },
+        { name: "😂 Fun",     value: "`/help fun`",     inline: true },
+        { name: "🛠️ Utility", value: "`/help utility`", inline: true },
+        { name: "🧪 Testing", value: "`/help testing`", inline: true },
+      ]);
+
+    const musicEmbed = new EmbedBuilder()
+      .setTitle("🎵 Music Commands")
+      .setColor(0x1DB954)
+      .setDescription("Your music commands via Lavalink")
+      .addFields([
+        { name: "/play <query>",      value: "🔍 Search & play or enqueue",       inline: true },
+        { name: "/pause",             value: "⏸️ Pause current track",             inline: true },
+        { name: "/skip",              value: "⏭️ Skip to next track",              inline: true },
+        { name: "/stop",              value: "⏹️ Stop & leave VC",                 inline: true },
+        { name: "/queue view",        value: "📜 Show current queue",             inline: true },
+        { name: "/queue add <query>", value: "➕ Add to queue",                   inline: true },
+        { name: "/queue remove <#>",  value: "❌ Remove from queue",              inline: true },
+        { name: "/queue clear",       value: "🗑️ Clear the entire queue",         inline: true },
+        { name: "/queue reposition",  value: "🔀 Move track within queue",       inline: true },
+        { name: "/volume <0.0–2.0>",  value: "🔊 Adjust playback volume",         inline: true },
+        { name: "/nowplaying",        value: "🎶 Show current track",             inline: true },
+        { name: "/trackhistory",      value: "📖 Last 5 played tracks",           inline: true },
+      ]);
 
     const funEmbed = new EmbedBuilder()
-      .setTitle("😂 Fun")
-      .setDescription("`Fun Commands.`")
-      .setColor("Orange")
-      .addFields(
-        {
-          name: "coinflip",
-          value: "`Setle a dispute with a coinflip.`",
-          inline: true,
-        },
-        {
-          name: "8ball",
-          value: "`Ask the magic 8ball a question.`",
-          inline: true,
-        },
-        {
-          name: "say",
-          value: "`Make the bot say something.`",
-          inline: true,
-        },
-        {
-          name: "dice",
-          value: "`Roll a 6 or 20 sided die.`",
-          inline: true,
-        },
-        {
-          name: "coinflip",
-          value: "`Flip a coin.`",
-          inline: true,
-        },
-        {
-          name: "dadjoke",
-          value: "`Get a random dad joke!`",
-          inline: true,
-        },
-        {
-          name: "probability",
-          value: "`Get the probability of something happening.`",
-          inline: true,
-        }
-      );
+      .setTitle("😂 Fun Commands")
+      .setColor(0xffa500)
+      .addFields([
+        { name: "/coinflip",    value: "🪙 Flip a coin",           inline: true },
+        { name: "/8ball",       value: "🔮 Ask the magic 8-ball",  inline: true },
+        { name: "/dice",        value: "🎲 Roll a die",            inline: true },
+        { name: "/dadjoke",     value: "😆 Get a dad joke",         inline: true },
+        { name: "/probability", value: "📊 Chance of something",    inline: true },
+        { name: "/say <text>",  value: "🗣️ Bot repeats your text",   inline: true },
+      ]);
 
     const utilityEmbed = new EmbedBuilder()
-      .setTitle("🛠️ Utility")
-      .setDescription("`Utility Commands.`")
-      .setColor("Blue")
-      .addFields(
-        {
-          name: "help",
-          value: "`Get help with commands.`",
-          inline: true,
-        },
-        {
-          name: "math",
-          value: "`Get a solution to a math problem.`",
-          inline: true,
-        },
-        {
-          name: "prefix",
-          value: "`Change the bots prefix.`",
-          inline: true,
-        },
-        {
-          name: "customcommand",
-          value: "`Create a custom command.`",
-          inline: true,
-        },
-        {
-          name: "delcustomcmd",
-          value: "`Delete a custom command.`",
-          inline: true,
-        },
-        {
-          name: "listcustomcmds",
-          value: "`Lists all custom commands.`",
-          inline: true,
-        },
-        {
-          name: "reminder",
-          value: "`Set a reminder.`",
-          inline: true,
-        },
-        {
-          name: "mcserver-stats",
-          value: "`Get the stats for a Minecraft server.`",
-          inline: true,
-        },
-        {
-          name: "mc-alerts",
-          value: "`Toggle alerts for a Minecraft server.`",
-          inline: true,
-        }
-      );
+      .setTitle("🛠️ Utility Commands")
+      .setColor(0x0000ff)
+      .addFields([
+        { name: "/help",            value: "❓ Show this menu",          inline: true },
+        { name: "/prefix <new>",    value: "🔤 Change bot prefix",      inline: true },
+        { name: "/customcommand",   value: "➕ Create custom cmd",      inline: true },
+        { name: "/delcustomcmd",    value: "❌ Delete custom cmd",      inline: true },
+        { name: "/listcustomcmds",  value: "📋 List custom cmds",       inline: true },
+        { name: "/reminder",        value: "⏰ Set a reminder",          inline: true },
+        { name: "/mcserver-stats",  value: "🖥️ Minecraft stats",         inline: true },
+        { name: "/mc-alerts",       value: "🚨 Toggle MC alerts",        inline: true },
+      ]);
 
     const testingEmbed = new EmbedBuilder()
-      .setTitle("🧪 Debug")
-      .setDescription("`Testing Commands.`")
-      .setColor("Yellow")
-      .addFields(
-        {
-          name: "simleave",
-          value: "`Simulates a user leaving the server.`",
-          inline: true,
-        },
-        {
-          name: "simjoin",
-          value: "`Simulates a user joining the server.`",
-          inline: true,
-        },
-        {
-          name: "uptime",
-          value: "`Check the uptime of the bot.`",
-          inline: true,
-        },
-        {
-          name: "welcomesetup",
-          value: "`Setup the welcome channel.`",
-          inline: true,
-        }
-      );
+      .setTitle("🧪 Testing Commands")
+      .setColor(0xffff00)
+      .addFields([
+        { name: "/simleave",     value: "👋 Simulate user leave",  inline: true },
+        { name: "/simjoin",      value: "🤝 Simulate user join",   inline: true },
+        { name: "/uptime",       value: "⏱️ Bot uptime",           inline: true },
+        { name: "/welcomesetup", value: "🏷️ Configure welcome",    inline: true },
+      ]);
 
-    const helpMenuSelect = async () => {
-      const filter = (i) => i.customId === "Help Menu";
-      const collector = interaction.channel.createMessageComponentCollector({
-        filter,
-        time: 60000,
-      });
-      collector.on("collect", async (i) => {
-        if (i.values[0] === "Help") {
-          await i.update({ embeds: [helpEmbed] });
-        }
-        if (i.values[0] === "Fun") {
-          await i.update({ embeds: [funEmbed] });
-        }
-        if (i.values[0] === "Utility") {
-          await i.update({ embeds: [utilityEmbed] });
-        }
-        if (i.values[0] === "Testing") {
-          await i.update({ embeds: [testingEmbed] });
-        }
-      });
+    // ─── Send initial reply ─────────────────────────────────────────────────
+    const payload = {
+      embeds: [mainEmbed],
+      components: [row],
+      ephemeral: isSlash,
     };
 
-    helpMenuSelect();
+    const sent = isSlash
+      ? await interaction.reply(payload)
+      : await channel.send(payload);
 
-    return interaction
-      .reply({
-        embeds: [helpEmbed],
-        components: [row],
-        ephemeral: true,
-      })
-      .then(() => wait(60000))
-      .then(() => interaction.deleteReply());
+    // ─── Collector with idle & overall timeout ───────────────────────────────
+    const collector = channel.createMessageComponentCollector({
+      filter: (i) => i.customId === "help-menu" && i.user.id === user.id,
+      idle:  60_000,   // 60s of inactivity
+      time: 120_000,   // 120s total
+    });
+
+    collector.on("collect", async (i) => {
+      let embed = mainEmbed;
+      switch (i.values[0]) {
+        case "music":   embed = musicEmbed;    break;
+        case "fun":     embed = funEmbed;      break;
+        case "utility": embed = utilityEmbed;  break;
+        case "testing": embed = testingEmbed;  break;
+      }
+      await i.update({ embeds: [embed], components: [row] });
+    });
+
+    collector.on("end", async () => {
+      // disable menu after end
+      try {
+        if (isSlash) {
+          await interaction.editReply({ components: [] });
+        } else {
+          await sent.edit({ components: [] });
+        }
+      } catch {}
+    });
   },
 };
