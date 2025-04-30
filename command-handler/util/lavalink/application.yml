@@ -42,4 +42,5 @@ plugins:
     oauth:
       enabled: true
       skipInitialization: true # don’t prompt again—using your token
-      refreshToken: "TOKEN"
+      refreshToken: ${LAVALINK_OAUTH_REFRESH_TOKEN}
+ 
