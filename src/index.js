@@ -1,6 +1,7 @@
 // bot/src/index.js
 // ─── Load .env before anything else ───────────────────────────────────────────
 require('dotenv/config');
+
 // ─── Spawn Lavalink ──────────────────────────────────────────────────────────
 const { spawn } = require('child_process');
 const path      = require('path');
@@ -13,11 +14,21 @@ const jarPath = path.resolve(
   'Lavalink.jar'
 );
 
-console.log('🟢 Spawning Lavalink:', 'java', ['-jar', jarPath]);
-const lavalink = spawn('java', ['-jar', jarPath], {
-  cwd: path.dirname(jarPath),
-  stdio: 'inherit'
-});
+// pick up JAVA_PATH from .env, or fall back to whatever `java` is in PATH
+const javaBin = process.env.JAVA_PATH || 'java';
+
+const useShell = process.platform === 'win32';
+
+console.log(`🟢 Spawning Lavalink: ${javaBin} -jar ${jarPath}`);
+const lavalink = spawn(
+  javaBin,
+  ['-jar', jarPath],
+  {
+    cwd: path.dirname(jarPath),
+    stdio: 'inherit',
+    shell: useShell
+  }
+);
 
 lavalink.on('error', err =>
   console.error('❌ Failed to start Lavalink process:', err)
@@ -26,8 +37,8 @@ lavalink.on('exit', code =>
   console.log('⚠️ Lavalink exited with code', code)
 );
 
-process.on('exit',  () => lavalink.kill());
-process.on('SIGINT', () => process.exit());
+process.once('exit',  () => lavalink.kill());
+process.once('SIGINT', () => process.exit());
 // ───────────────────────────────────────────────────────────────────────────────
 
 const { Client, GatewayIntentBits, Partials, ActivityType } = require('discord.js');
