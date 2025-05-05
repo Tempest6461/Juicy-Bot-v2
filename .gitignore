@@ -3,4 +3,7 @@ node_modules
 Bitvise Profile.tlp
 .vs
 Lavalink.jar
+command-handler/util/lavalink/start-lavalink.sh
+
 command-handler/util/lavalink/application.yml
+ecosystem.config.js

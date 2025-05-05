@@ -88,6 +88,7 @@ module.exports = {
         { name: "/reminder",        value: "⏰ Set a reminder",          inline: true },
         { name: "/mcserver-stats",  value: "🖥️ Minecraft stats",         inline: true },
         { name: "/mc-alerts",       value: "🚨 Toggle MC alerts",        inline: true },
+        { name: "/aisettings [#channel] [rate]", value: "⚙️ Configure AI chime channels & rate", inline: true },
       ]);
 
     const testingEmbed = new EmbedBuilder()
@@ -114,8 +115,8 @@ module.exports = {
     // ─── Collector with idle & overall timeout ───────────────────────────────
     const collector = channel.createMessageComponentCollector({
       filter: (i) => i.customId === "help-menu" && i.user.id === user.id,
-      idle:  60_000,   // 60s of inactivity
-      time: 120_000,   // 120s total
+      idle:  60_000,
+      time: 120_000,
     });
 
     collector.on("collect", async (i) => {
@@ -130,7 +131,6 @@ module.exports = {
     });
 
     collector.on("end", async () => {
-      // disable menu after end
       try {
         if (isSlash) {
           await interaction.editReply({ components: [] });

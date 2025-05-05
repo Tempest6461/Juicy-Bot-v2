@@ -5,11 +5,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start-lavalink": "bash ./command-handler/util/lavalink/start-lavalink.sh",
+    "dev": "concurrently \"npm run start-lavalink\" \"nodemon src/index.js\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@azure/cognitiveservices-computervision": "^8.2.0",
     "@azure/ms-rest-js": "^2.7.0",
@@ -37,5 +35,9 @@
     "yt-search": {
       "jsonpath-plus": "10.3.0"
     }
+  },
+  "devDependencies": {
+    "concurrently": "^7.0.0",
+    "nodemon": "^3.1.10"
   }
 }
