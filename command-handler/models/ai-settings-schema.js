@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const aiSettingsSchema = new mongoose.Schema({
     guildId: { type: String, required: true, unique: true },
     chimeChannelIds: { type: [String], default: [] },
-    chimeRate: { type: Number, default: 10 },
+    chimeRate: { type: Number, default: 0 },
   });
 
 module.exports = mongoose.models.AISettings ||
