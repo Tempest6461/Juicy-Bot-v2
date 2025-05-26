@@ -33,24 +33,20 @@ module.exports = async (oldMember, newMember) => {
 
     if (oldNickname !== newNickname) {
       try {
-        await schizoCounterHandler.recordNicknameChange(userId, oldNickname, newNickname);
-
         const generalChannel =
           newMember.guild.channels.cache.find(channel => channel.name.includes('general')) ||
           newMember.guild.systemChannel;
 
-        if (generalChannel) {
-          const nicknameChangeCount = await schizoCounterHandler.getNicknameChangeCount(userId);
-          const dynamicIntro = swapSchizoMessage();
+        const count = await schizoCounterHandler.incrementNicknameChange(userId);
+        const dynamicIntro = swapSchizoMessage();
 
+        if (generalChannel) {
           generalChannel.send(
-            `${dynamicIntro} He used to be ${oldNickname || 'none'}, now he's ${newNickname || 'none'}.\nMental Breakdowns: ${nicknameChangeCount}`
+            `${dynamicIntro} He used to be ${oldNickname || 'none'}, now he's ${newNickname || 'none'}.\nMental Breakdowns: ${count}`
           );
-        } else {
-          console.log(`No "general" channel or system channel found.`);
         }
       } catch (error) {
-        console.error('Error recording nickname change:', error);
+        console.error('Error handling nickname change:', error);
       }
     }
   }

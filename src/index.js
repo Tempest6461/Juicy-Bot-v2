@@ -16,7 +16,6 @@ const jarPath = path.resolve(
 
 // pick up JAVA_PATH from .env, or fall back to whatever `java` is in PATH
 const javaBin = process.env.JAVA_PATH || 'java';
-
 const useShell = process.platform === 'win32';
 
 console.log(`🟢 Spawning Lavalink: ${javaBin} -jar ${jarPath}`);
@@ -46,6 +45,9 @@ const { Manager } = require('erela.js');
 const CH = require('../command-handler');
 const { decayMood } = require('../command-handler/util/mood');
 
+// Import your MusicHandler singleton
+const musicHandler = require('../command-handler/command-handler/MusicHandler');
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -66,10 +68,8 @@ client.manager = new Manager({
     password: 'Grizzly101*',  // match application.yml
     identifier: 'MainNode',
     secure: false,
-
-    // ** THESE TWO LINES are absolutely required **
-    version: 'v4',               // use /v4/websocket
-    useVersionPath: true         // instead of the old "/"
+    version: 'v4',              
+    useVersionPath: true        
   }],
   send: (guildId, payload) => {
     const guild = client.guilds.cache.get(guildId);
@@ -85,6 +85,33 @@ client.manager = new Manager({
 
 // don’t forget to forward raw voice updates…
 client.on('raw', d => client.manager.updateVoiceState(d));
+
+// ─── Auto‐disconnect when alone in VC ─────────────────────────────────────────
+client.on('voiceStateUpdate', (oldState, newState) => {
+  // Only care about the guild where you have an active music subscription
+  const guildId = oldState.guild.id;
+  const sub = musicHandler.subs.get(guildId);
+  if (!sub) return;
+
+  const botChannelId = sub.connection.joinConfig.channelId;
+  if (!botChannelId) return;
+
+  // If someone left the channel the bot is in…
+  if (oldState.channelId === botChannelId) {
+    const channel = oldState.guild.channels.cache.get(botChannelId);
+    if (!channel) return;
+    // Count non-bot users
+    const humanCount = channel.members.filter(m => !m.user.bot).size;
+    if (humanCount === 0) {
+      // Tear down immediately
+      try {
+        musicHandler.stop(guildId);
+      } catch (err) {
+        console.error(`Error stopping music when alone: ${err.message}`);
+      }
+    }
+  }
+});
 
 // ─── Ready & Command Handler ─────────────────────────────────────────────────
 client.once('ready', () => {
