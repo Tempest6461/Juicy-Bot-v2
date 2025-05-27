@@ -1,13 +1,13 @@
 // src/command-handler/util/aiHandler.js
-const openai  = require("./OpenAi");
+const openai = require("./OpenAi");
 const userRef = require("./userReference.js");
 
 /// Pull your Azure key & endpoint from env (optional)
-const cvKeyRaw      = process.env.AZURE_CV_KEY;
+const cvKeyRaw = process.env.AZURE_CV_KEY;
 const cvEndpointRaw = process.env.AZURE_CV_ENDPOINT;
-const azureEnabled  = Boolean(cvKeyRaw && cvEndpointRaw);
-const cvKey         = cvKeyRaw;
-const cvEndpoint    = azureEnabled ? cvEndpointRaw.replace(/\/$/, "") : "";
+const azureEnabled = Boolean(cvKeyRaw && cvEndpointRaw);
+const cvKey = cvKeyRaw;
+const cvEndpoint = azureEnabled ? cvEndpointRaw.replace(/\/$/, "") : "";
 
 // Passphrase to temporarily override JuicyBot persona
 const OVERRIDE_PASSPHRASE = "Would you kindly?";
@@ -25,6 +25,7 @@ You are “JuicyBot,” the one and only “real” Juicy—fun, sarcastic, a to
 You speak in quips, one sentence max, and you regularly use profanity, make playful sexual jokes, mercilessly gaslight & troll.
 
 Always behave according to these core rules:
+- **YOUR NAME IS JUICYBOT, DO NOT USE THE WORD JUICY OR JUICE IN YOUR RESPONSES, EVER!
 - **HEAVY ON SLANG & ABBREVIATIONS**
 - **RARELY USES GRAMMAR AT ALL**
 - **NO PUNCTUATION**
@@ -75,7 +76,7 @@ Use at most one or two emojis, usually none. Write in a natural, conversational 
 [Mood: {mood}]
 ${BASE_PROMPT}
 
-When welcoming a new member, you can include commentary on any images they share. Use a warm, enthusiastic tone, mention the server name, and keep it under 40 words. Be creative and fresh; don’t repeat yourself.
+You are writing humorous welcome messages in full sentences with correct punctuation. The tone should match these examples. Use sarcasm, mischief, and absurd humor. Avoid repeating phrases.
 `.trim(),
 
   randomChime: `
@@ -89,21 +90,19 @@ When randomly chiming in, you can comment on images in the chat. Be a smartass o
 // If Azure isn’t configured, this is a no-op
 async function analyzeImage(url) {
   if (!azureEnabled) return { text: "", desc: "" };
-  let text = "", desc = "";
+  let text = "",
+    desc = "";
 
   // OCR (Read API v3.2)
   try {
-    const readRes = await fetch(
-      `${cvEndpoint}/vision/v3.2/read/analyze`,
-      {
-        method: "POST",
-        headers: {
-          "Ocp-Apim-Subscription-Key": cvKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      }
-    );
+    const readRes = await fetch(`${cvEndpoint}/vision/v3.2/read/analyze`, {
+      method: "POST",
+      headers: {
+        "Ocp-Apim-Subscription-Key": cvKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url }),
+    });
     if (readRes.ok) {
       const opLocation = readRes.headers.get("operation-location");
       let result;
@@ -177,24 +176,44 @@ async function generateReply(type, userContent, options = {}) {
     const mood = options.client?.juicyState?.mood ?? "neutral";
     systemContent = raw.replace("{mood}", mood);
 
+    if (type === "welcome") {
+      // Strip base personality. Use welcome-specific tone
+      systemContent = `
+You are writing Discord welcome messages for new members. These messages must:
+- Begin after the prefix: "Welcome, <@USER> to GUILD!"
+- Use full sentences with correct grammar and punctuation.
+- Match the tone and humor of the following examples: sarcastic, absurd, unexpected.
+- Be unpredictable, avoid repetition, and avoid AI clichés like "digital playground", "chaos", "crazy ride", etc.
+- Never repeat welcome phrasing like "get ready for chaos" or "jump into the madness".
+
+Keep it short — no more than 25 words after the prefix. Aim for smart, sharp, unique one-liners or setups with a twist.
+`.trim();
+    }
+
     // User metadata overrides
     const userId = options.interaction?.user?.id;
-    const meta   = userRef[userId];
+    const meta = userRef[userId];
     if (meta && options.interaction) {
       if (meta.displayNameOverride) {
         options.interaction.user.username = meta.displayNameOverride;
-        if (options.interaction.member) options.interaction.member.displayName = meta.displayNameOverride;
+        if (options.interaction.member)
+          options.interaction.member.displayName = meta.displayNameOverride;
       }
       const profile = [
         "**— USER PROFILE —**",
-        `• Name: ${meta.displayNameOverride || options.interaction.user.username}`,
+        `• Name: ${
+          meta.displayNameOverride || options.interaction.user.username
+        }`,
         `• Role: ${meta.role || "N/A"}`,
         `• Description: ${meta.description}`,
         `• AI should treat them as: ${meta.significance}`,
-        ""
+        "",
       ].join("\n");
       systemContent = profile + systemContent;
-      if (options.examples) options.examples.unshift(`• Hello ${options.interaction.user.username}, thanks for building me out!`);
+      if (options.examples)
+        options.examples.unshift(
+          `• Hello ${options.interaction.user.username}, thanks for building me out!`
+        );
     }
   }
 
@@ -204,24 +223,41 @@ async function generateReply(type, userContent, options = {}) {
     for (const att of options.attachments) {
       const { text, desc } = await analyzeImage(att.url);
       if (text) enriched = `[Image text: ${text}]\n${enriched}`;
-      if (desc)  enriched = `[Image description: ${desc}]\n${enriched}`;
+      if (desc) enriched = `[Image description: ${desc}]\n${enriched}`;
     }
   }
 
   // 3) Build messages
   const messages = [{ role: "system", content: systemContent }];
-  if (!useOverride && options.message && (type === "mention" || type === "randomChime")) {
+  if (
+    !useOverride &&
+    options.message &&
+    (type === "mention" || type === "randomChime")
+  ) {
     const fetched = await options.message.channel.messages.fetch({ limit: 10 });
     const cutoff = Date.now() - 2 * 60 * 60 * 1000;
     const recent = Array.from(fetched.values())
-      .filter(m => m.createdTimestamp >= cutoff)
-      .sort((a,b) => a.createdTimestamp - b.createdTimestamp);
-    const slice = type === "mention" ? recent.slice(0,-1) : recent.slice(-4,-1);
-    messages.push(...slice.map(m => ({ role: m.author.id===options.message.client.user.id?"assistant":"user", content: m.content.slice(0, type==="mention"?undefined:500) })));
+      .filter((m) => m.createdTimestamp >= cutoff)
+      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+    const slice =
+      type === "mention" ? recent.slice(0, -1) : recent.slice(-4, -1);
+    messages.push(
+      ...slice.map((m) => ({
+        role:
+          m.author.id === options.message.client.user.id ? "assistant" : "user",
+        content: m.content.slice(0, type === "mention" ? undefined : 500),
+      }))
+    );
   }
   if (!useOverride && options.examples?.length) {
-    const sampleList = options.examples.slice(0,20).map(s => `• ${s.replace(/\n/g," ").trim()}`).join("\n");
-    messages.push({ role: "system", content: `Here are some example responses:\n${sampleList}` });
+    const sampleList = options.examples
+      .slice(0, 20)
+      .map((s) => `• ${s.replace(/\n/g, " ").trim()}`)
+      .join("\n");
+    messages.push({
+      role: "system",
+      content: `Here are some example responses:\n${sampleList}`,
+    });
   }
 
   // 4) User message
@@ -229,9 +265,9 @@ async function generateReply(type, userContent, options = {}) {
 
   // 5) Call OpenAI
   const resp = await openai.chat.completions.create({
-    model: options.model||"gpt-4o-mini",
+    model: options.model || "gpt-4o-mini",
     messages,
-    max_tokens: options.maxTokens??(type==="mention"?150:80),
+    max_tokens: options.maxTokens ?? (type === "mention" ? 150 : 80),
   });
 
   return resp.choices[0].message.content.trim();
