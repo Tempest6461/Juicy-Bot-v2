@@ -1,5 +1,8 @@
 // bot/command-handler/command-handler/CommandHandler.js
+
 const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
 const getAllFiles = require("../util/get-all-files");
 const Command = require("./Command");
 const SlashCommands = require("./SlashCommands");
@@ -10,7 +13,6 @@ const WelcomeChannels = require("./WelcomeChannels");
 const SchizoCounter = require("./SchizoCounter");
 
 class CommandHandler {
-  // <commandName, instance of the Command class>
   _commands = new Map();
   _validations = this.getValidations(
     path.join(__dirname, "validations", "runtime")
@@ -20,6 +22,11 @@ class CommandHandler {
   _welcomeChannels = new WelcomeChannels();
   _schizoCounter = new SchizoCounter();
 
+  /**
+   * @param {Object} instance  bot configuration (contains testServers, etc.)
+   * @param {string} commandsDir  Absolute path to your `bot/src/commands` folder
+   * @param {import("discord.js").Client} client
+   */
   constructor(instance, commandsDir, client) {
     this._instance = instance;
     this._commandsDir = commandsDir;
@@ -31,7 +38,14 @@ class CommandHandler {
       ...this.getValidations(instance.validations?.runtime),
     ];
 
-    // Kick off reading files (which now does bulk registration for guildOnly/testOnly)
+    // On each new guild join, bulk-register guildDefs for that guild:
+    client.on("guildCreate", (guild) => {
+      // When a new guild is added, we rebuild guildDefs and re-register only for that guild
+      const guildDefs = this.buildGuildDefinitions();
+      this._slashCommands.bulkRegisterGuild(guild.id, guildDefs);
+    });
+
+    // Kick off reading files + initial bulk registration
     this.readFiles();
   }
 
@@ -58,21 +72,30 @@ class CommandHandler {
     return Array.from(this._commands.keys());
   }
 
-  async readFiles() {
-    // 1) Discover built-in + user commands
+  /**
+   * Recursively load all command files, return array of file paths.
+   */
+  getAllCommandFiles() {
     const defaultCommands = getAllFiles(path.join(__dirname, "./commands"));
-    const files = getAllFiles(this._commandsDir);
+    const userCommands = getAllFiles(this._commandsDir);
+    return [...defaultCommands, ...userCommands];
+  }
+
+  /**
+   * Builds two arrays:
+   *  • guildDefs  → every command where testOnly === true or guildOnly === true
+   *  • globalDefs → every command where neither flag is set (i.e. global)
+   */
+  buildDefinitions() {
     const validations = [
       ...this.getValidations(path.join(__dirname, "validations", "syntax")),
       ...this.getValidations(this._instance.validations?.syntax),
     ];
 
-    // Arrays to hold definitions for bulk registration later
-    const guildDefs = [];   // { name, description, options } for guild-only + testOnly
-    const globalDefs = [];  // { name, description, options } for global (BOTH)
+    const guildDefs = [];
+    const globalDefs = [];
 
-    // 2) Load each command file
-    for (let file of [...defaultCommands, ...files]) {
+    for (const file of this.getAllCommandFiles()) {
       const commandObject = require(file);
       const commandName = path.basename(file).split(".")[0];
       const command = new Command(this._instance, commandName, commandObject);
@@ -88,8 +111,10 @@ class CommandHandler {
       } = commandObject;
 
       // Run validations & init
-      for (const validation of validations) validation(command);
-      await init(this._client, this._instance);
+      for (const validation of validations) {
+        validation(command);
+      }
+      init(this._client, this._instance);
 
       // Register in-memory (prefix or other lookups)
       const names = [command.commandName, ...aliases];
@@ -97,12 +122,10 @@ class CommandHandler {
         this._commands.set(name, command);
       }
 
-      // 3) Build up slash-command definitions
+      // Build slash-command definitions
       if (type === "SLASH" || type === "BOTH") {
-        // Use the options array provided by the command file (default to [])
         const opts = Array.isArray(options) ? options : [];
 
-        // If it's testOnly or guildOnly, collect for bulk registration under guilds
         if (testOnly || guildOnly) {
           guildDefs.push({
             name: command.commandName,
@@ -110,7 +133,6 @@ class CommandHandler {
             options: opts,
           });
         } else {
-          // Otherwise it's a global command
           globalDefs.push({
             name: command.commandName,
             description,
@@ -120,15 +142,21 @@ class CommandHandler {
       }
     }
 
-    // 4) Bulk-overwrite all guild-only (and test-only) commands in each guild (if any)
-    if (guildDefs.length > 0) {
-      const guildIds = Array.from(this._client.guilds.cache.keys());
-      for (const guildId of guildIds) {
-        await this._slashCommands.bulkRegisterGuild(guildId, guildDefs);
-      }
-    }
+    return { guildDefs, globalDefs };
+  }
 
-    // 5) Bulk-overwrite all global commands once
+  /**
+   * On startup: reads command files, builds definitions, and then:
+   *  1️⃣ Bulk-register guildDefs in existing guilds IF they changed since last run.
+   *  2️⃣ Bulk-sync globalDefs once.
+   */
+  async readFiles() {
+    const { guildDefs, globalDefs } = this.buildDefinitions();
+
+    // 4) Bulk-register guild-only commands in existing guilds (with hash check)
+    await this.bulkRegisterGuildsIfChanged(guildDefs);
+
+    // 5) Bulk-sync global commands once
     try {
       console.log("🔄 Bulk-syncing global slash commands...");
       await this._client.application.commands.set(globalDefs);
@@ -140,10 +168,62 @@ class CommandHandler {
     console.log(`🔧 CommandHandler loaded ${this._commands.size} commands`);
   }
 
+  /**
+   * Computes an MD5 of guildDefs, compares with cache, and if changed,
+   * bulk-registers guildDefs in *each* existing guild (staggered).
+   */
+  async bulkRegisterGuildsIfChanged(guildDefs) {
+    const CACHE_DIR = path.join(this._commandsDir, "..", ".cache");
+    const HASH_FILE = path.join(CACHE_DIR, "commands_hash.txt");
+
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+
+    const newHash = crypto.createHash("md5").update(JSON.stringify(guildDefs)).digest("hex");
+    let oldHash = null;
+    if (fs.existsSync(HASH_FILE)) {
+      oldHash = fs.readFileSync(HASH_FILE, "utf8");
+    }
+
+    if (oldHash === newHash) {
+      console.log("→ [CommandHandler] No guild-only command changes detected; skipping bulk registration.");
+      return;
+    }
+
+    // Write new hash
+    fs.writeFileSync(HASH_FILE, newHash, "utf8");
+
+    if (guildDefs.length === 0) {
+      console.log("→ [CommandHandler] No guild-only commands to register.");
+      return;
+    }
+
+    console.log(`→ [CommandHandler] Detected ${guildDefs.length} guild-only commands; registering in all guilds...`);
+
+    const guildIds = Array.from(this._client.guilds.cache.keys());
+    if (guildIds.length === 0) {
+      console.log("→ [CommandHandler] Bot is in no guilds; nothing to register.");
+      return;
+    }
+
+    // Bulk-overwrite in parallel, staggered by 250ms per guild
+    const restPromises = guildIds.map((guildId, idx) => {
+      return new Promise((resolve) => {
+        const delay = 250 * idx;
+        setTimeout(async () => {
+          await this._slashCommands.bulkRegisterGuild(guildId, guildDefs);
+          resolve();
+        }, delay);
+      });
+    });
+
+    await Promise.all(restPromises);
+    console.log(`✅ [CommandHandler] Finished bulk-registering guild-only commands.`);
+  }
+
   async runCommand(command, args, message, interaction) {
     const { callback, type, cooldowns } = command.commandObject;
-
-    // don't run SLASH commands in message context
     if (message && type === "SLASH") return;
 
     const guild = message ? message.guild : interaction.guild;
@@ -171,7 +251,7 @@ class CommandHandler {
       }
     }
 
-    // cooldown handling (unchanged)
+    // cooldown handling
     if (cooldowns) {
       let cooldownType;
       for (const t of cooldownTypes) {
@@ -199,7 +279,6 @@ class CommandHandler {
       };
     }
 
-    // finally invoke the command’s callback
     return await callback(usage);
   }
 
