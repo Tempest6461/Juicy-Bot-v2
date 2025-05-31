@@ -4,6 +4,9 @@ Bitvise Profile.tlp
 .vs
 Lavalink.jar
 command-handler/util/lavalink/start-lavalink.sh
-
 command-handler/util/lavalink/application.yml
 ecosystem.config.js
+logback.xml
+.lavalink.log
+magmastream/README.md
+magmastream/dist/sessionData/sessionIds.json

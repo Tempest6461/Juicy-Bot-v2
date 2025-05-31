@@ -1,20 +1,34 @@
 // src/commands/music/trackhistory.js
-const music = require('../../../command-handler/command-handler/MusicHandler.js');
 const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
   name: 'trackhistory',
-  description: 'Show the last 5 tracks that played',
+  description: 'Show the recently played tracks (up to 10)',
   type: 'SLASH',
   guildOnly: true,
-  callback: ({ interaction }) => {
-    const hist = music.getHistory(interaction.guild.id);
-    if (!hist.length) {
-      return interaction.reply('No playback history yet.');
+
+  callback: async ({ client, interaction }) => {
+    const guildId = interaction.guildId;
+    if (!guildId) {
+      return interaction.reply({ content: '❌ This command can only be used in a server.', ephemeral: true });
     }
+
+    // Safely access history from MusicHandler
+    const historyMap = client.musicHandler?.history;
+    const history = historyMap?.get(guildId) || [];
+    if (!history.length) {
+      return interaction.reply({ content: '📭 No track history available yet.', ephemeral: true });
+    }
+
+    // Get last up to 10 tracks, most recent first
+    const recent = history.slice(-10).reverse();
+    const lines = recent.map((t, i) => `${i + 1}. [${t.title}](${t.uri})`);
+
     const embed = new EmbedBuilder()
-      .setTitle('🕑 Track History')
-      .setDescription(hist.map((t,i) => `**${i+1}.** ${t}`).join('\n'));
+      .setColor(0x1db954)
+      .setTitle('🕘 Recently Played')
+      .setDescription(lines.join('\n'));
+
     return interaction.reply({ embeds: [embed] });
-  }
+  },
 };

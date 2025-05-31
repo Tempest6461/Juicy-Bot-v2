@@ -5,7 +5,6 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const Reminder = require("../../../command-handler/models/reminder-schema.js");
-const { options } = require("./welcomeSetup.js");
 
 module.exports = {
   name: "reminder",
@@ -95,8 +94,9 @@ module.exports = {
     const remindAt = new Date(Date.now() + ms);
 
     // 3) Save to MongoDB
+    let reminderDoc;
     try {
-      await Reminder.create({
+      reminderDoc = await Reminder.create({
         userId:    user.id,
         guildId:   guild.id,
         channelId: channel.id,
@@ -112,7 +112,7 @@ module.exports = {
       return reply;
     }
 
-    // 4) Schedule the actual reminder
+    // 4) Schedule the actual reminder and delete afterwards
     setTimeout(async () => {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
@@ -121,15 +121,14 @@ module.exports = {
 
       try {
         if (interaction) {
-          await interaction.followUp({
-            embeds: [embed],
-            ephemeral: true,
-          });
+          await interaction.followUp({ embeds: [embed], ephemeral: true });
         } else {
           await message.reply({ embeds: [embed] });
         }
+        // Delete the reminder from the database after sending
+        await Reminder.findByIdAndDelete(reminderDoc._id);
       } catch (err) {
-        console.error("❌ reminder follow-up failed:", err);
+        console.error("❌ reminder follow-up or deletion failed:", err);
       }
     }, ms);
 

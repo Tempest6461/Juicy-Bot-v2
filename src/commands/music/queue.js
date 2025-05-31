@@ -1,153 +1,134 @@
 // src/commands/music/queue.js
-const { ApplicationCommandOptionType } = require('discord.js');
-const music = require('../../../command-handler/command-handler/MusicHandler.js');
+const { ApplicationCommandOptionType, EmbedBuilder } = require('discord.js');
 
 module.exports = {
   name: 'queue',
-  category: 'Music',
-  description: 'View or modify the music queue.',
-  type: 'BOTH',
+  description: 'View, remove, or clear the music queue',
+  type: 'SLASH',
   guildOnly: true,
   options: [
     {
-      name: 'view',
-      description: 'View the current queue',
-      type: ApplicationCommandOptionType.Subcommand
+      name: 'action',
+      description: 'What to do with the queue',
+      type: ApplicationCommandOptionType.String,
+      required: false,
+      choices: [
+        { name: 'view',   value: 'view'   },
+        { name: 'remove', value: 'remove' },
+        { name: 'clear',  value: 'clear'  },
+      ],
     },
     {
-      name: 'add',
-      description: 'Add a track to the queue',
-      type: ApplicationCommandOptionType.Subcommand,
-      options: [
-        {
-          name: 'query',
-          description: 'YouTube URL or search keywords',
-          type: ApplicationCommandOptionType.String,
-          required: true
-        }
-      ]
+      name: 'position',
+      description: 'Position of track to remove (1 = next up, etc.)',
+      type: ApplicationCommandOptionType.Integer,
+      required: false,
     },
-    {
-      name: 'remove',
-      description: 'Remove a track from the queue by position',
-      type: ApplicationCommandOptionType.Subcommand,
-      options: [
-        {
-          name: 'position',
-          description: '1-based queue index to remove',
-          type: ApplicationCommandOptionType.Integer,
-          required: true
-        }
-      ]
-    },
-    {
-      name: 'clear',
-      description: 'Clear the entire queue',
-      type: ApplicationCommandOptionType.Subcommand
-    },
-    {
-      name: 'reposition',
-      description: 'Move a track to a new position',
-      type: ApplicationCommandOptionType.Subcommand,
-      options: [
-        {
-          name: 'from',
-          description: 'Current track position (1-based)',
-          type: ApplicationCommandOptionType.Integer,
-          required: true
-        },
-        {
-          name: 'to',
-          description: 'New position for the track (1-based)',
-          type: ApplicationCommandOptionType.Integer,
-          required: true
-        }
-      ]
-    }
   ],
 
-  callback: async ({ interaction, message, args }) => {
-    const isSlash = Boolean(interaction);
-    const guild   = isSlash ? interaction.guild : message.guild;
-    const member  = isSlash ? interaction.member : message.member;
-    const sub     = isSlash
-      ? interaction.options.getSubcommand()
-      : (args[0] || 'view').toLowerCase();
-    const reply = isSlash ? interaction : message;
-
-    try {
-      switch (sub) {
-        case 'view': {
-          const q = music.getQueue(guild.id);
-          const content = !q.length
-            ? '📭 Queue is empty.'
-            : `📜 Queue:\n${q.map((t,i) => `${i+1}. ${t}`).join('\n')}`;
-          return isSlash
-            ? reply.reply({ content, ephemeral: false })
-            : reply.reply(content);
-        }
-
-        case 'add': {
-          const vc = member.voice.channel;
-          if (!vc) throw new Error('🔈 You need to join a voice channel first.');
-          const query = isSlash
-            ? interaction.options.getString('query')
-            : args.slice(1).join(' ');
-          const title = await music.enqueue(guild, vc, query);
-          const msg = `▶️ Enqueued **${title}**`;
-          return isSlash
-            ? reply.reply(msg)
-            : reply.reply(msg);
-        }
-
-        case 'remove': {
-          const pos = isSlash
-            ? interaction.options.getInteger('position')
-            : parseInt(args[1], 10);
-          if (isNaN(pos) || pos < 1) throw new Error('❌ Please provide a valid track position.');
-          const removed = music.remove(guild.id, pos);
-          const msg = `🗑️ Removed **${removed}** from the queue.`;
-          return isSlash
-            ? reply.reply(msg)
-            : reply.reply(msg);
-        }
-
-        case 'clear': {
-          music.clearQueue(guild.id);
-          const msg = '🗑️ Queue cleared.';
-          return isSlash
-            ? reply.reply(msg)
-            : reply.reply(msg);
-        }
-
-        case 'reposition': {
-          const from = isSlash
-            ? interaction.options.getInteger('from')
-            : parseInt(args[1], 10);
-          const to = isSlash
-            ? interaction.options.getInteger('to')
-            : parseInt(args[2], 10);
-          if (
-            isNaN(from) ||
-            isNaN(to) ||
-            from < 1 ||
-            to < 1
-          ) throw new Error('❌ Please provide valid track positions.');
-          music.moveTrack(guild.id, from, to);
-          const msg = `🔀 Moved track from position **${from}** to **${to}**.`;
-          return isSlash
-            ? reply.reply(msg)
-            : reply.reply(msg);
-        }
-
-        default:
-          throw new Error('❌ That subcommand does not exist.');
-      }
-    } catch (err) {
-      const errMsg = err.message || 'An error occurred.';
-      return isSlash
-        ? reply.reply({ content: errMsg, ephemeral: true })
-        : reply.reply(errMsg);
+  callback: async ({ client, interaction }) => {
+    const guildId = interaction.guildId;
+    if (!guildId) {
+      return interaction.reply({ content: '❌ This command can only be used in a server.', ephemeral: true });
     }
-  }
+
+    const player = client.magma.players.get(guildId);
+    if (!player) {
+      return interaction.reply({ content: '📭 Nothing is queued right now.', ephemeral: true });
+    }
+
+    const q = player.queue;
+    const action = interaction.options.getString('action') || 'view';
+    const pos = interaction.options.getInteger('position');
+
+    // Helper: extract numeric queue entries
+    const numericEntries = () =>
+      Object.keys(q)
+        .filter(k => /^\d+$/.test(k))
+        .sort((a, b) => Number(a) - Number(b))
+        .map(i => q[i]);
+
+    const hasGetSlice  = typeof q.getSlice === 'function';
+    const hasTotalSize = typeof q.totalSize === 'function';
+
+    // ─── CLEAR ─────────────────────────────────────────────────────────────
+    if (action === 'clear') {
+      if (typeof q.clear === 'function') {
+        // Magmastream’s built-in clear
+        await q.clear();
+      } else if (typeof q.dequeue === 'function') {
+        // Repeatedly dequeue until only the current track remains
+        let next;
+        do {
+          next = await q.dequeue();
+        } while (next != null);
+      } else if (typeof q.remove === 'function') {
+        // Fallback: remove by position one-by-one
+        let entries = numericEntries();
+        while (entries.length) {
+          await q.remove(1);
+          entries = numericEntries();
+        }
+      }
+      return interaction.reply({ content: '🗑️ Queue cleared.', ephemeral: true });
+    }
+
+    // ─── REMOVE ───────────────────────────────────────────────────────────
+    if (action === 'remove') {
+      const entries = numericEntries();
+      const upTotal = entries.length;
+      if (!pos || pos < 1 || pos > upTotal) {
+        return interaction.reply({ content: '❌ Invalid position.', ephemeral: true });
+      }
+
+      let removed;
+      if (typeof q.remove === 'function') {
+        [removed] = await q.remove(pos);
+      } else {
+        removed = entries[pos - 1];
+        delete q[pos];
+      }
+      return interaction.reply({ content: `🗑️ Removed **${removed.title}** from slot ${pos}.` });
+    }
+
+    // ─── VIEW ───────────────────────────────────────────────────────────────
+    const now = q.current || null;
+    let upcoming = [];
+    if (hasGetSlice) {
+      upcoming = await q.getSlice(1, 11);
+    } else {
+      upcoming = numericEntries().slice(0, 10);
+    }
+    const upCount = hasTotalSize
+      ? (await q.totalSize()) - 1
+      : numericEntries().length;
+
+    // format ms → M:SS
+    const formatDuration = (ms) => {
+      if (ms == null) return 'Live';
+      const totalSec = Math.floor(ms / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    };
+
+    const nowField = now
+      ? `▶️ **${now.title}** (\`${formatDuration(now.duration)}\`)`
+      : 'Nothing is playing right now.';
+
+    const upLines = upcoming.map((t, i) => {
+      const dur = t.duration ? formatDuration(t.duration) : 'Live';
+      return `${i + 1}. **${t.title}** (\`${dur}\`)`;
+    });
+
+    const embed = new EmbedBuilder()
+      .setColor(0x1db954)
+      .setTitle(`🎶 Queue — ${upCount} upcoming track${upCount === 1 ? '' : 's'}`)
+      .addFields(
+        { name: 'Now Playing', value: nowField },
+        { name: 'Up Next',     value: upLines.length ? upLines.join('\n') : 'No upcoming tracks.' }
+      );
+
+    return interaction.reply({ embeds: [embed] });
+  },
 };

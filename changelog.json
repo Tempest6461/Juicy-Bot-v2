@@ -1,0 +1,71 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2022-10-31",
+    "changes": [
+      "🚀 Initial release: core commands & handlers.",
+      "📦 Added `/customcmd`, `/math`, `/8ball`, `/coinflip`, `/say`."
+    ]
+  },
+  {
+    "version": "2.0.0",
+    "date": "2023-02-02",
+    "changes": [
+      "🔄 Major refactor of command handling."
+    ]
+  },
+  {
+    "version": "2.5.0",
+    "date": "2024-07-15",
+    "changes": [
+      "🎉 Welcoming system overhaul with 220+ custom welcome messages.",
+      "➕ Added `/simjoin` & `/simleave` commands."
+    ]
+  },
+  {
+    "version": "3.0.0",
+    "date": "2025-01-26",
+    "changes": [
+      "✨ Long awaited update with new features.",
+      "📊 Added Minecraft server stats & monitoring.",
+      "➕ Added a handful of miscellaneous commands."
+    ]
+  },
+  {
+    "version": "3.1.0",
+    "date": "2025-01-26",
+    "changes": [
+      "🤪 Schizo update: monitored name changes and callouts.",
+      "🔧 Added a handful of miscellaneous helper commands."
+    ]
+  },
+  {
+    "version": "3.2.0",
+    "date": "2025-04-20",
+    "changes": [
+      "🤖 AI Update: several bot responses are now fully AI-driven.",
+      "🆕 Updated core interaction responses to use OpenAI GPT."
+    ]
+  },
+  {
+    "version": "3.2.5",
+    "date": "2025-04-21",
+    "changes": [
+      "🐞 Major bugfixes for AI & personality tweaks.",
+      "🔧 Adjusted AI fallback behavior and prompt handling."
+    ]
+  },
+  {
+    "version": "3.5.0",
+    "date": "2025-05-30",
+    "changes": [
+      "🔀 Major refactor of the Music system & new leveling system.",
+      "➕ Added a new music system with better performance and features.",
+      "➕ Added a new leveling system with leaderboards.",
+      "➕ Added the `/changelog` command to view updates.",
+      "➕ Added the `/bugreport` command.",
+      "🔧 Overhauled the help command to be dynamic and always reflect the latest commands.",
+      "🔧 Fixed aiSettings command."
+    ]
+  }
+]

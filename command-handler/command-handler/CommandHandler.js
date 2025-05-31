@@ -148,6 +148,7 @@ class CommandHandler {
       console.error("❌ Failed bulk-sync global slash commands:", err);
     }
     // === end bulk‐overwrite ===
+    console.log(`🔧 CommandHandler loaded ${this._commands.size} commands`);
   }
 
   async runCommand(command, args, message, interaction) {

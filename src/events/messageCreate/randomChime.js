@@ -38,7 +38,7 @@ module.exports = async function randomChime(message) {
   if (rate <= 0) return;
 
   // Keyword-trigger OR random chance
-  const containsKeyword = /(juicy|juicyBot)/i.test(content);
+  const containsKeyword = /(juicyBot)/i.test(content);
   const randomTrigger   = Math.random() < rate;
   if (!(containsKeyword || randomTrigger)) return;
 

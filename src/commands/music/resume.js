@@ -1,9 +1,9 @@
-// src/commands/music/pause.js
+// src/commands/music/resume.js
 const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
-  name: 'pause',
-  description: 'Pause the current track',
+  name: 'resume',
+  description: 'Resume playback if paused',
   type: 'SLASH',
   guildOnly: true,
 
@@ -14,24 +14,20 @@ module.exports = {
     }
 
     const player = client.magma.players.get(guildId);
-    // Ensure there's something playing
-    const hasCurrent = typeof player?.queue.getCurrent === 'function'
-      ? await player.queue.getCurrent()
-      : player?.queue.current;
-    if (!player || (!player.playing && !hasCurrent)) {
+    if (!player) {
       return interaction.reply({ content: '📭 Nothing is playing right now.', ephemeral: true });
     }
 
-    if (player.paused) {
-      return interaction.reply({ content: '⏸️ Playback is already paused.', ephemeral: true });
+    if (!player.paused) {
+      return interaction.reply({ content: '▶️ Playback is not paused.', ephemeral: true });
     }
 
-    // Pause playback
-    await player.pause(true);
+    // Actually resume
+    await player.pause(false);
 
     const embed = new EmbedBuilder()
-      .setColor(0xffff00)
-      .setDescription('⏸️ Playback paused.');
+      .setColor(0x00ff00)
+      .setDescription('▶️ Playback resumed.');
 
     return interaction.reply({ embeds: [embed] });
   },
