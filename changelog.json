@@ -73,7 +73,7 @@
     "date": "2025-05-31",
     "changes": [
       "🔄 Major refactor of command handling.",
-      "➕ Combined `/welcomeSetup` and `/aisettings` into a single `/setup` command.",
+      "➕ Combined `/welcomeSetup` and `/aisettings` into a single `/setupmenu` command.",
       "🔧 Improved error handling and user feedback for music commands."
     ]
   }
