@@ -67,5 +67,14 @@
       "🔧 Overhauled the help command to be dynamic and always reflect the latest commands.",
       "🔧 Fixed aiSettings command."
     ]
+  },
+  {
+    "version": "3.6.0",
+    "date": "2025-05-31",
+    "changes": [
+      "🔄 Major refactor of command handling.",
+      "➕ Combined `/welcomeSetup` and `/aisettings` into a single `/setup` command.",
+      "🔧 Improved error handling and user feedback for music commands."
+    ]
   }
 ]
