@@ -1,4 +1,4 @@
-// src/command-handler/command-handler/CommandHandler.js
+// bot/command-handler/command-handler/CommandHandler.js
 const path = require("path");
 const getAllFiles = require("../util/get-all-files");
 const Command = require("./Command");
@@ -31,6 +31,7 @@ class CommandHandler {
       ...this.getValidations(instance.validations?.runtime),
     ];
 
+    // Kick off reading files (which now does bulk registration for guildOnly/testOnly)
     this.readFiles();
   }
 
@@ -58,6 +59,7 @@ class CommandHandler {
   }
 
   async readFiles() {
+    // 1) Discover built-in + user commands
     const defaultCommands = getAllFiles(path.join(__dirname, "./commands"));
     const files = getAllFiles(this._commandsDir);
     const validations = [
@@ -65,10 +67,14 @@ class CommandHandler {
       ...this.getValidations(this._instance.validations?.syntax),
     ];
 
-    // Load built-in + custom command files
+    // Arrays to hold definitions for bulk registration later
+    const guildDefs = [];   // { name, description, options } for guild-only + testOnly
+    const globalDefs = [];  // { name, description, options } for global (BOTH)
+
+    // 2) Load each command file
     for (let file of [...defaultCommands, ...files]) {
       const commandObject = require(file);
-      let commandName = file.split(/[\/\\]/).pop().split(".")[0];
+      const commandName = path.basename(file).split(".")[0];
       const command = new Command(this._instance, commandName, commandObject);
 
       const {
@@ -78,68 +84,51 @@ class CommandHandler {
         guildOnly,
         aliases = [],
         init = () => {},
+        options = [],
       } = commandObject;
 
       // Run validations & init
       for (const validation of validations) validation(command);
       await init(this._client, this._instance);
 
-      // Register in-memory
+      // Register in-memory (prefix or other lookups)
       const names = [command.commandName, ...aliases];
       for (const name of names) {
         this._commands.set(name, command);
       }
 
-      // Slash‐command registration
+      // 3) Build up slash-command definitions
       if (type === "SLASH" || type === "BOTH") {
-        const options =
-          commandObject.options ||
-          this._slashCommands.createOptions(commandObject);
+        // Use the options array provided by the command file (default to [])
+        const opts = Array.isArray(options) ? options : [];
 
-        if (testOnly) {
-          // 1) Test‐only → single test guild
-          for (const guildId of this._instance.testServers) {
-            await this._slashCommands.create(
-              command.commandName,
-              description,
-              options,
-              guildId
-            );
-          }
-        } else if (guildOnly) {
-          // 2) Guild‐only → _every_ guild the bot is in
-          for (const [guildId] of this._client.guilds.cache) {
-            await this._slashCommands.create(
-              command.commandName,
-              description,
-              options,
-              guildId
-            );
-          }
+        // If it's testOnly or guildOnly, collect for bulk registration under guilds
+        if (testOnly || guildOnly) {
+          guildDefs.push({
+            name: command.commandName,
+            description,
+            options: opts,
+          });
+        } else {
+          // Otherwise it's a global command
+          globalDefs.push({
+            name: command.commandName,
+            description,
+            options: opts,
+          });
         }
-        // 3) Global commands are handled by bulk‐overwrite below
       }
     }
 
-    // === bulk‐overwrite global slash commands ===
-    const globalDefs = [];
-    for (const [, command] of this._commands) {
-      const { type, testOnly, guildOnly, description, options } =
-        command.commandObject;
-      if (
-        (type === "SLASH" || type === "BOTH") &&
-        !testOnly &&
-        !guildOnly
-      ) {
-        globalDefs.push({
-          name: command.commandName,
-          description,
-          options:
-            options || this._slashCommands.createOptions(command.commandObject),
-        });
+    // 4) Bulk-overwrite all guild-only (and test-only) commands in each guild (if any)
+    if (guildDefs.length > 0) {
+      const guildIds = Array.from(this._client.guilds.cache.keys());
+      for (const guildId of guildIds) {
+        await this._slashCommands.bulkRegisterGuild(guildId, guildDefs);
       }
     }
 
+    // 5) Bulk-overwrite all global commands once
     try {
       console.log("🔄 Bulk-syncing global slash commands...");
       await this._client.application.commands.set(globalDefs);
@@ -147,7 +136,7 @@ class CommandHandler {
     } catch (err) {
       console.error("❌ Failed bulk-sync global slash commands:", err);
     }
-    // === end bulk‐overwrite ===
+
     console.log(`🔧 CommandHandler loaded ${this._commands.size} commands`);
   }
 
@@ -182,7 +171,7 @@ class CommandHandler {
       }
     }
 
-    // cooldown handling
+    // cooldown handling (unchanged)
     if (cooldowns) {
       let cooldownType;
       for (const t of cooldownTypes) {
@@ -210,6 +199,7 @@ class CommandHandler {
       };
     }
 
+    // finally invoke the command’s callback
     return await callback(usage);
   }
 

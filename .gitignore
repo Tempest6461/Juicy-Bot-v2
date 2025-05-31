@@ -10,3 +10,5 @@ logback.xml
 .lavalink.log
 magmastream/README.md
 magmastream/dist/sessionData/sessionIds.json
+src/.cache/commands_hash.txt
+.cache

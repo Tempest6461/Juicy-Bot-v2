@@ -1,118 +1,140 @@
 // src/command-handler/command-handler/SlashCommands.js
-const { ApplicationCommandOptionType } = require("discord.js");
+
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const { REST } = require("@discordjs/rest");
+const { Routes } = require("discord-api-types/v10");
 
 class SlashCommands {
   constructor(client) {
     this._client = client;
+
+    // When the bot joins a new guild, bulk-register all guild-only commands there
+    this._client.on("guildCreate", (guild) => {
+      this.bulkRegisterGuild(guild.id);
+    });
   }
 
   /**
-   * Fetches either the global application commands manager
-   * or a specific guild's commands manager.
-   * Returns null on failure.
+   * Recursively loads all commands under src/commands, excluding those with guildOnly: false
+   * (i.e. commands explicitly meant to be global). Returns an array of JSON objects.
    */
-  async getCommands(guildId) {
+  loadAllGuildCommands() {
+    const results = [];
+    // Adjust this path if your commands folder is somewhere else:
+    const commandsDir = path.join(__dirname, "..", "..", "..", "bot", "src", "commands");
+
+    function recurse(dir) {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          recurse(fullPath);
+        } else if (entry.isFile() && entry.name.endsWith(".js")) {
+          const cmd = require(fullPath);
+          // Only include commands that export `data` and have guildOnly !== false
+          if (cmd.data && cmd.guildOnly !== false) {
+            results.push(cmd.data.toJSON());
+          }
+        }
+      }
+    }
+
+    if (fs.existsSync(commandsDir)) {
+      recurse(commandsDir);
+    }
+    return results;
+  }
+
+  /**
+   * Bulk-overwrites _all_ guild-only slash commands in the given guild.
+   * This sends a single PUT request to /applications/<botId>/guilds/<guildId>/commands.
+   */
+  async bulkRegisterGuild(guildId) {
+    const commandsJSON = this.loadAllGuildCommands();
+    if (commandsJSON.length === 0) {
+      console.log("→ No guild-only commands to register for guild:", guildId);
+      return;
+    }
+
+    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
     try {
-      let commands;
-      if (guildId) {
-        const guild = await this._client.guilds.fetch(guildId);
-        commands = guild.commands;
-      } else {
-        commands = this._client.application.commands;
-      }
-      await commands.fetch();
-      return commands;
-    } catch (error) {
-      console.error(`[SlashCommands] getCommands error for ${guildId || 'global'}:`, error);
-      return null;
+      await rest.put(
+        Routes.applicationGuildCommands(this._client.user.id, guildId),
+        { body: commandsJSON }
+      );
+      console.log(`✅ Bulk-registered ${commandsJSON.length} commands in guild ${guildId}`);
+    } catch (err) {
+      console.error(`❌ Failed to bulk-register in guild ${guildId}: ${err.message}`);
     }
   }
 
   /**
-   * Compares two option arrays for differences.
+   * On bot startup, this iterates through every guild the bot is already in,
+   * detects if any guild-only commands have changed (via a simple MD5 hash), and—
+   * if so—bulk-overwrites them in parallel (with a stagger) across all guilds.
    */
-  areOptionsDifferent(options, existingOptions) {
-    if (!Array.isArray(options) || !Array.isArray(existingOptions)) return true;
-    for (let i = 0; i < options.length; i++) {
-      const o = options[i];
-      const e = existingOptions[i];
-      if (
-        !e ||
-        o.name !== e.name ||
-        o.type !== e.type ||
-        o.description !== e.description
-      ) {
-        return true;
-      }
-    }
-    return false;
-  }
+  async bulkRegisterAllGuilds() {
+    const CACHE_DIR = path.join(__dirname, "..", "..", "..", "bot", "src", ".cache");
+    const HASH_FILE = path.join(CACHE_DIR, "commands_hash.txt");
 
-  /**
-   * Creates or updates a slash command.
-   * Skips if the commands manager isn't available.
-   */
-  async create(name, description, options, guildId) {
-    const commands = await this.getCommands(guildId);
-    if (!commands) {
-      console.warn(`[SlashCommands] Skipping create for "${name}" (${guildId || 'global'}): manager unavailable`);
+    // Ensure cache directory exists
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+
+    // Load current guild-only commands and compute MD5 hash
+    const commandsJSON = this.loadAllGuildCommands();
+    const newHash = crypto.createHash("md5").update(JSON.stringify(commandsJSON)).digest("hex");
+
+    // Read old hash (if any)
+    let oldHash = null;
+    if (fs.existsSync(HASH_FILE)) {
+      oldHash = fs.readFileSync(HASH_FILE, "utf8");
+    }
+
+    // If nothing changed, skip registration entirely
+    if (oldHash === newHash) {
+      console.log("→ No guild-only command changes detected; skipping bulk registration.");
       return;
     }
 
-    const existing = commands.cache.find(cmd => cmd.name === name);
-    if (existing) {
-      const { description: desc, options: opts } = existing;
-      if (
-        desc !== description ||
-        opts.length !== options.length ||
-        this.areOptionsDifferent(options, opts)
-      ) {
-        console.log(`[SlashCommands] Updating "${name}" (${guildId || 'global'})`);
-        await commands.edit(existing.id, { description, options });
-      }
+    // Otherwise, write new hash and proceed
+    fs.writeFileSync(HASH_FILE, newHash, "utf8");
+    console.log(`→ Detected ${commandsJSON.length} guild-only commands to (re)register.`);
+
+    // Gather all guild IDs from cache
+    const guildIds = Array.from(this._client.guilds.cache.keys());
+    if (guildIds.length === 0) {
+      console.log("→ Bot is in no guilds; nothing to register.");
       return;
     }
 
-    console.log(`[SlashCommands] Creating "${name}" (${guildId || 'global'})`);
-    await commands.create({ name, description, options });
-  }
+    // Bulk-overwrite in parallel (staggered by 250ms per guild to respect rate limits)
+    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+    const promises = guildIds.map((guildId, index) => {
+      return new Promise((resolve) => {
+        const delay = 250 * index; // 250ms * index
+        setTimeout(async () => {
+          try {
+            await rest.put(
+              Routes.applicationGuildCommands(this._client.user.id, guildId),
+              { body: commandsJSON }
+            );
+            console.log(`→ Bulk-registered ${commandsJSON.length} commands in ${guildId}`);
+            resolve({ guildId, success: true });
+          } catch (err) {
+            console.warn(`→ Failed bulk-register in ${guildId}: ${err.message}`);
+            resolve({ guildId, success: false });
+          }
+        }, delay);
+      });
+    });
 
-  /**
-   * Deletes a slash command if it exists.
-   * Skips if the commands manager isn't available.
-   */
-  async delete(commandName, guildId) {
-    const commands = await this.getCommands(guildId);
-    if (!commands) {
-      console.warn(`[SlashCommands] Skipping delete for "${commandName}" (${guildId || 'global'}): manager unavailable`);
-      return;
-    }
-    const existing = commands.cache.find(cmd => cmd.name === commandName);
-    if (!existing) return;
-    console.log(`[SlashCommands] Deleting "${commandName}" (${guildId || 'global'})`);
-    await existing.delete();
-  }
-
-  /**
-   * Generates option objects from an expectedArgs string like "<foo> <bar>".
-   */
-  createOptions({ expectedArgs = "", minArgs = 0 }) {
-    const options = [];
-    if (expectedArgs) {
-      const split = expectedArgs
-        .substring(1, expectedArgs.length - 1)
-        .split(/[>\]] [<\[]/);
-      for (let i = 0; i < split.length; ++i) {
-        const arg = split[i];
-        options.push({
-          name: arg.toLowerCase().replace(/\s+/g, "-"),
-          description: arg,
-          type: ApplicationCommandOptionType.String,
-          required: i < minArgs,
-        });
-      }
-    }
-    return options;
+    const results = await Promise.all(promises);
+    const successCount = results.filter((r) => r.success).length;
+    console.log(`✅ Bulk registration complete: ${successCount}/${guildIds.length} succeeded.`);
   }
 }
 
