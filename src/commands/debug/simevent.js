@@ -6,7 +6,7 @@ module.exports = {
   description: "Simulate Discord events for testing purposes.",
   category: "Testing",
   type: "SLASH",
-  testOnly: true,
+  testOnly: false,
   guildOnly: true,
   permissions: [PermissionFlagsBits.Administrator],
 
